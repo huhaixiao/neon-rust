@@ -1,0 +1,303 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/hud.gd" id="1_hud"]
+
+[node name="HUD" type="CanvasLayer"]
+process_mode = 3
+layer = 10
+script = ExtResource("1_hud")
+
+[node name="Root" type="Control" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="HullLabel" type="Label" parent="Root"]
+offset_left = 30.0
+offset_top = 12.0
+offset_right = 340.0
+offset_bottom = 38.0
+theme_override_colors/font_color = Color(0.6, 0.96, 1, 1)
+theme_override_colors/font_outline_color = Color(0.01, 0.02, 0.04, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 15
+text = "HULL  100"
+
+[node name="HealthBack" type="ColorRect" parent="Root"]
+offset_left = 30.0
+offset_top = 40.0
+offset_right = 330.0
+offset_bottom = 54.0
+mouse_filter = 2
+color = Color(0.04, 0.1, 0.14, 0.95)
+
+[node name="HealthFill" type="ColorRect" parent="Root/HealthBack"]
+offset_left = 2.0
+offset_top = 2.0
+offset_right = 298.0
+offset_bottom = 12.0
+mouse_filter = 2
+color = Color(0.28, 1, 0.62, 1)
+
+[node name="WeaponLabel" type="Label" parent="Root"]
+offset_left = 30.0
+offset_top = 58.0
+offset_right = 400.0
+offset_bottom = 80.0
+theme_override_colors/font_color = Color(0.55, 0.95, 1, 1)
+theme_override_colors/font_outline_color = Color(0.01, 0.02, 0.04, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+text = "PULSE  //  DASH READY"
+
+[node name="ControlHint" type="Label" parent="Root"]
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = -34.0
+offset_right = 900.0
+offset_bottom = -12.0
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.42, 0.62, 0.72, 1)
+theme_override_colors/font_outline_color = Color(0.01, 0.02, 0.04, 1)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 12
+text = "WASD  MOVE    MOUSE  AIM    LMB  FIRE    SPACE  DASH"
+
+[node name="DebugLabel" type="Label" parent="Root"]
+visible = false
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -400.0
+offset_top = 86.0
+offset_right = -30.0
+offset_bottom = 184.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(0.62, 1, 0.55, 1)
+theme_override_colors/font_outline_color = Color(0.01, 0.02, 0.04, 1)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 11
+text = "FPS 60  16.7ms\nWAVE 01  ENEMY 0  BULLET 0\nHULL 100  DASH 100%  OD 0.0s"
+horizontal_alignment = 2
+
+[node name="WaveLabel" type="Label" parent="Root"]
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -120.0
+offset_top = 14.0
+offset_right = 120.0
+offset_bottom = 42.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.72, 0.98, 1, 1)
+theme_override_colors/font_outline_color = Color(0.01, 0.02, 0.04, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 16
+text = "WAVE 00"
+horizontal_alignment = 1
+
+[node name="ScoreLabel" type="Label" parent="Root"]
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -340.0
+offset_top = 10.0
+offset_right = -30.0
+offset_bottom = 52.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.01, 0.02, 0.04, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 28
+text = "000000"
+horizontal_alignment = 2
+
+[node name="BestLabel" type="Label" parent="Root"]
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -340.0
+offset_top = 52.0
+offset_right = -30.0
+offset_bottom = 74.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(0.5, 0.72, 0.8, 1)
+theme_override_colors/font_outline_color = Color(0.01, 0.02, 0.04, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+text = "BEST  000000"
+horizontal_alignment = 2
+
+[node name="Banner" type="Label" parent="Root"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -540.0
+offset_top = -220.0
+offset_right = 540.0
+offset_bottom = -138.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.82, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.02, 0.35, 0.45, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 52
+text = "NEON RUST"
+horizontal_alignment = 1
+
+[node name="BannerSub" type="Label" parent="Root"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -540.0
+offset_top = -126.0
+offset_right = 540.0
+offset_bottom = -88.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.82, 0.38, 1)
+theme_override_colors/font_outline_color = Color(0.03, 0.02, 0.01, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 17
+text = "SURVIVE THE WAVES"
+horizontal_alignment = 1
+
+[node name="PauseLayer" type="Control" parent="Root"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Dim" type="ColorRect" parent="Root/PauseLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.01, 0.02, 0.04, 0.72)
+
+[node name="PauseTitle" type="Label" parent="Root/PauseLayer"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -70.0
+offset_right = 300.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.85, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.02, 0.3, 0.4, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 44
+text = "PAUSED"
+horizontal_alignment = 1
+
+[node name="PauseHint" type="Label" parent="Root/PauseLayer"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = 44.0
+offset_right = 300.0
+offset_bottom = 76.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.6, 0.85, 0.9, 1)
+theme_override_font_sizes/font_size = 15
+text = "ESC  OR  START  TO  RESUME"
+horizontal_alignment = 1
+
+[node name="GameOver" type="Control" parent="Root"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Dim" type="ColorRect" parent="Root/GameOver"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.06, 0.01, 0.03, 0.78)
+
+[node name="Title" type="Label" parent="Root/GameOver"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -420.0
+offset_top = -200.0
+offset_right = 420.0
+offset_bottom = -110.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.42, 0.5, 1)
+theme_override_colors/font_outline_color = Color(0.25, 0.01, 0.04, 1)
+theme_override_constants/outline_size = 9
+theme_override_font_sizes/font_size = 40
+text = "SYSTEM FAILURE"
+horizontal_alignment = 1
+
+[node name="ScoreValue" type="Label" parent="Root/GameOver"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -62.0
+offset_right = 300.0
+offset_bottom = -6.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.02, 0.02, 0.03, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 34
+text = "000000"
+horizontal_alignment = 1
+
+[node name="BestValue" type="Label" parent="Root/GameOver"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = 6.0
+offset_right = 300.0
+offset_bottom = 34.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.55, 0.8, 0.88, 1)
+theme_override_font_sizes/font_size = 15
+text = "BEST  000000"
+horizontal_alignment = 1
+
+[node name="Hint" type="Label" parent="Root/GameOver"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = 120.0
+offset_right = 300.0
+offset_bottom = 154.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 0.55, 1)
+theme_override_font_sizes/font_size = 15
+text = "PRESS  R  OR  A  TO  REDEPLOY"
+horizontal_alignment = 1

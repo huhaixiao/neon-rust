@@ -1,0 +1,6 @@
+* text=auto
+*.png binary
+*.wav binary
+*.svg text
+*.gd text
+*.tscn text

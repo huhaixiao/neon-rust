@@ -1,0 +1,11 @@
+# Godot 4 generated data
+.godot/
+.import/
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Build output
+build/
+*.tmp
