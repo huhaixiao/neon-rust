@@ -151,6 +151,7 @@ neon-rust/
 │  └─ buffs/              # buff_def / buff_pool + ui/ 波次间三选一（buff_select.tscn）
 ├─ modules/*/assets/      # 素材按归属放置：单模块专用放该模块内
 ├─ modules/global/assets/ # 跨模块共用：arena_floor / crosshair / particle / flash + 8 个音效
+├─ modules/global/components/ship_body.gd  # 玩家与敌人的共用基类：越界夹取 / 受击闪白计时 / 击退
 ├─ tools/                 # 资源生成与像素采样脚本（生成结果直接写入各模块 assets/）
 ├─ tests/                 # 无头冒烟测试 + 窗口截图脚本
 └─ docs/screenshots/      # 验收截图

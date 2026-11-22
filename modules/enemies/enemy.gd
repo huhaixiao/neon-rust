@@ -1,5 +1,5 @@
 class_name Enemy
-extends CharacterBody2D
+extends ShipBody
 ## CHASER = fast/fragile, BRUTE = slow tank, SPITTER = keeps range and shoots.
 
 signal died(kind: int, at: Vector2)
@@ -22,10 +22,8 @@ var radius := 17.0
 var body_scale := 0.82
 var base_color := Color(1.0, 0.25, 0.5)
 
-var _dead := false
 var _hit_cd := 0.0
 var _shoot_cd := 0.0
-var _flash := 0.0
 var _orbit := 1.0
 
 @onready var sprite: Sprite2D = $Sprite
@@ -90,12 +88,12 @@ func _apply_look() -> void:
 
 
 func _process(delta: float) -> void:
-	_flash = maxf(0.0, _flash - delta)
-	sprite.modulate = Color(2.0, 2.0, 2.0, 1.0) if _flash > 0.0 else Color.WHITE
+	tick_hit_flash(delta)
+	sprite.modulate = Color(2.0, 2.0, 2.0, 1.0) if flash_left > 0.0 else Color.WHITE
 
 
 func _physics_process(delta: float) -> void:
-	if _dead:
+	if dead:
 		return
 	_hit_cd = maxf(0.0, _hit_cd - delta)
 	_shoot_cd = maxf(0.0, _shoot_cd - delta)
@@ -111,8 +109,7 @@ func _physics_process(delta: float) -> void:
 	_steer(direction, distance, delta)
 	velocity += _separation()
 	position += velocity * delta
-	var bounds := Game.arena.grow(-radius - 4.0)
-	global_position = global_position.clamp(bounds.position, bounds.end)
+	clamp_to_arena(radius + 4.0)
 	_face(delta, direction)
 	_touch_player(distance, player)
 	_try_shoot(distance, player)
@@ -181,20 +178,18 @@ func _try_shoot(distance: float, player: PlayerUnit) -> void:
 
 
 func take_damage(amount: float, hit_at: Vector2) -> void:
-	if _dead:
+	if dead:
 		return
 	health -= amount
-	_flash = 0.1
-	var push := global_position - hit_at
-	if push.length() > 0.01:
-		global_position += push.normalized() * 3.0
+	start_hit_flash(0.1)
+	knock_back(hit_at, 3.0)
 	Fx.burst(hit_at, base_color, 4, 130.0, 0.5)
 	if health <= 0.0:
 		_die()
 
 
 func _die() -> void:
-	_dead = true
+	dead = true
 	died.emit(kind, global_position)
 	Fx.burst(global_position, base_color, 22, 360.0, 1.0)
 	Fx.flash(global_position, base_color)

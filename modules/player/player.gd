@@ -1,5 +1,5 @@
 class_name PlayerUnit
-extends CharacterBody2D
+extends ShipBody
 ## Twin-stick player: eight-way move, free aim (mouse or right stick),
 ## hold-to-fire, and a dash with invulnerability frames.
 
@@ -17,7 +17,6 @@ const BULLET_SCENE := preload("res://modules/projectiles/bullet.tscn")
 var health := 100
 var aim := Vector2.RIGHT
 var overdrive_left := 0.0
-var dead := false
 
 var _dashing := false
 var _dash_left := 0.0
@@ -25,7 +24,6 @@ var _dash_cd := 0.0
 var _dash_dir := Vector2.RIGHT
 var _fire_cd := 0.0
 var _invuln := 0.0
-var _hit_flash := 0.0
 var _ghost_cd := 0.0
 var _flash_tween: Tween = null
 
@@ -65,7 +63,7 @@ func _tick(delta: float) -> void:
 	_fire_cd = maxf(0.0, _fire_cd - delta)
 	_dash_cd = maxf(0.0, _dash_cd - delta)
 	_invuln = maxf(0.0, _invuln - delta)
-	_hit_flash = maxf(0.0, _hit_flash - delta)
+	tick_hit_flash(delta)
 	_ghost_cd = maxf(0.0, _ghost_cd - delta)
 	if overdrive_left > 0.0:
 		overdrive_left = maxf(0.0, overdrive_left - delta)
@@ -100,8 +98,7 @@ func _move(delta: float) -> void:
 	else:
 		velocity = input_dir * move_speed * Game.buff_move_mult
 	position += velocity * delta
-	var bounds := Game.arena.grow(-24.0)
-	global_position = global_position.clamp(bounds.position, bounds.end)
+	clamp_to_arena(24.0)
 
 
 func _try_dash() -> void:
@@ -175,7 +172,7 @@ func _hide_muzzle() -> void:
 
 
 func _update_visuals() -> void:
-	if _hit_flash > 0.0:
+	if flash_left > 0.0:
 		body.modulate = Color(2.0, 1.1, 1.1, 1.0)
 	elif overdrive_left > 0.0:
 		body.modulate = Color(1.3, 1.05, 0.55, 1.0)
@@ -192,16 +189,13 @@ func take_damage(amount: float, from: Vector2 = Vector2.ZERO) -> void:
 		return
 	health = maxi(0, health - int(round(amount)))
 	_invuln = 0.42
-	_hit_flash = 0.14
+	start_hit_flash(0.14)
 	Game.set_health(health, max_health)
 	Game.add_shake(0.6)
 	Fx.burst(global_position, Color(1.0, 0.35, 0.45), 10, 220.0, 0.7)
 	Fx.flash(global_position, Color(1.0, 0.4, 0.5))
 	sfx_hurt.play()
-	if from != Vector2.ZERO:
-		var push := global_position - from
-		if push.length() > 0.01:
-			position += push.normalized() * 10.0
+	knock_back(from, 10.0)
 	if health <= 0:
 		_die()
 
