@@ -12,19 +12,25 @@ var damage := 18.0
 var friendly := true
 var tint := Color(0.5, 1.0, 1.0)
 var life := 1.4
+## Extra targets this round can pass through (PIERCING ROUNDS).
+var pierce := 0
 
 var _spent := false
+var _left := 0
+var _hit_bodies: Array[Node] = []
 
 @onready var sprite: Sprite2D = $Sprite
 @onready var trail: Line2D = $Trail
 
 
-func setup(dir: Vector2, dmg: float, spd: float, is_friendly: bool, color: Color) -> void:
+func setup(dir: Vector2, dmg: float, spd: float, is_friendly: bool, color: Color, extra_pierce := 0) -> void:
 	direction = dir.normalized()
 	damage = dmg
 	speed = spd
 	friendly = is_friendly
 	tint = color
+	pierce = extra_pierce
+	_left = extra_pierce
 
 
 func _ready() -> void:
@@ -57,11 +63,15 @@ func _on_body_entered(body: Node2D) -> void:
 		return
 	if friendly:
 		var enemy := body as Enemy
-		if enemy == null:
+		if enemy == null or _hit_bodies.has(body):
 			return
-		_spent = true
 		enemy.take_damage(damage, global_position)
 		Fx.burst(global_position, tint, 4, 130.0, 0.5)
+		_hit_bodies.append(body)
+		if _left > 0:
+			_left -= 1
+			return
+		_spent = true
 		queue_free()
 	else:
 		var player := body as PlayerUnit

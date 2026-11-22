@@ -26,6 +26,7 @@ signal title_requested
 @onready var pause_hint: Label = $Root/PauseLayer/Panel/PauseHint
 @onready var over_hint: Label = $Root/GameOver/Hint
 @onready var debug_label: Label = $Root/DebugLabel
+@onready var buff_list: Label = $Root/BuffList
 @onready var options_layer: Control = $Root/OptionsLayer
 @onready var btn_resume: Button = $Root/PauseLayer/Panel/BtnResume
 @onready var btn_restart: Button = $Root/PauseLayer/Panel/BtnRestart
@@ -48,6 +49,7 @@ func _ready() -> void:
 	Game.health_changed.connect(_on_health)
 	Game.wave_changed.connect(_on_wave)
 	Game.wave_cleared.connect(_on_wave_cleared)
+	Game.buff_changed.connect(_on_buff_changed)
 	Game.run_started.connect(_on_run_started)
 	Game.run_ended.connect(_on_run_ended)
 	_on_score(Game.score)
@@ -64,6 +66,7 @@ func _ready() -> void:
 	options_layer.visible = false
 	_wire_menu()
 	_refresh_options()
+	_refresh_buffs()
 
 
 func _process(_delta: float) -> void:
@@ -191,6 +194,7 @@ func show_pause(paused: bool) -> void:
 	options_layer.visible = false
 	control_hint.visible = not paused and not game_over.visible
 	if paused:
+		clear_banner()
 		btn_resume.grab_focus()
 
 
@@ -240,12 +244,47 @@ func _on_wave_cleared(index: int, bonus: int) -> void:
 	_reset_best()
 
 
+func clear_banner() -> void:
+	if _banner_tween != null and _banner_tween.is_valid():
+		_banner_tween.kill()
+	banner.modulate.a = 0.0
+	banner_sub.modulate.a = 0.0
+
+
+func announce_buff(def: BuffDef) -> void:
+	_announce(def.title, "%s  //  %s" % [def.tag_label(), def.desc])
+
+
+func _on_buff_changed(_def: BuffDef, _stacks: int) -> void:
+	_refresh_buffs()
+
+
+func _refresh_buffs() -> void:
+	var lines: Array[String] = ["MODULES  %02d" % Game.buff_order.size()]
+	var by_id := {}
+	for def in BuffPool.all():
+		by_id[def.id] = def
+	var shown := 0
+	for id in Game.buff_order:
+		if shown >= 4:
+			break
+		var def: BuffDef = by_id.get(id)
+		if def == null:
+			continue
+		lines.append("%s  x%d" % [def.title, Game.buff_stacks(id)])
+		shown += 1
+	if Game.buff_order.size() > shown:
+		lines.append("+%d MORE" % (Game.buff_order.size() - shown))
+	buff_list.text = "\n".join(lines)
+
+
 func _on_run_started() -> void:
 	game_over.visible = false
 	pause_layer.visible = false
 	_refresh_input_copy()
 	control_hint.visible = true
 	_reset_best()
+	_refresh_buffs()
 	_announce("NEON RUST", "SURVIVE THE WAVES")
 
 

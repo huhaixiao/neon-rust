@@ -92,10 +92,36 @@ HUD 会检测是否接了手柄：接了就把提示切成手柄说法（`RT FIR
 
 - 每波按预算生成敌人：`min(6 + 波次 × 2, 44)` 个，从场地边缘外缓速涌入。
 - 第 2 波起出现 SPITTER（远程），第 3 波起出现 BRUTE（重装）；敌人体力随波次 ×`1 + 0.16 × (波次 − 1)`，移速每波 +3%。
-- 清空当前波 → 结算奖励 `25 + 20 × 波次` 分 → 短暂间隔后下一波。
+- 清空当前波 → 结算奖励 `25 + 20 × 波次` 分 → 时停三选一 buff → 下一波。
 - 敌人有几率掉落补给：6% 血包（回 30 HP）、9% 超载（9 秒三连发，单发伤害 0.72 倍、射速 0.62 间隔）。
 - 玩家 100 HP；冲刺 0.13 秒、期间无敌、冷却 1.5 秒。
 - 死亡后场景暂停并弹出 SYSTEM FAILURE 面板，`R` 立即重开；最高分写入 `user://neon_rust.cfg`。
+
+## Buff 系统
+
+清空一波后游戏时停，弹出三张模块卡，选一张留到本局结束（死亡或重开）。
+
+- 抽卡：先从 OFFENSE / DEFENSE / MOBILITY / UTILITY 各抽一张，再用剩余随机补到三张——所以三张卡一定是不同方向的取舍；某张叠满 `max_stacks` 后从池里消失。
+- 作用域：全部存在 `Game`（autoload）里，`reset_run()` 清零——重开就是新 build，不做跨局成长。
+- 数值只写在 `modules/buffs/buff_pool.gd`；玩家 / 子弹 / 刷怪器 / 拾取物只读 `Game` 上的聚合值（`buff_damage_mult`、`buff_extra_shots` …），不各自维护状态。
+- 操作：`1 / 2 / 3` 直选，或方向键移焦点 + `A` 确认；选卡期间 `ESC` 被吞掉，不会误解除暂停。
+- 反馈：选完 HUD 亮出卡名 + 标签 + 效果；右下 `MODULES` 清单列前四个已拿 buff 与层数，其余折叠为 `+N MORE`。
+
+| Buff | 标签 | 每层效果 | 上限 |
+| --- | --- | --- | --- |
+| OVERCLOCK | OFFENSE | 子弹伤害 +25% | 3 |
+| RAPID CYCLE | OFFENSE | 射速 +18% | 3 |
+| SPLIT SHOT | OFFENSE | 额外一发弹丸（72% 伤害） | 2 |
+| PIERCING ROUNDS | OFFENSE | 穿透 +1 个目标 | 2 |
+| HULL PLATING | DEFENSE | 生命上限 +25 并回 25 | 3 |
+| REPAIR DRONE | DEFENSE | 每次击杀回 3 血 | 3 |
+| PHASE CAPACITOR | DEFENSE | 冲刺冷却 −25% | 2 |
+| THRUSTER TUNE | MOBILITY | 移速 +12% | 3 |
+| MAGNET COIL | UTILITY | 拾取物 430px 内自动吸附 | 2 |
+| SALVAGE RIG | UTILITY | 掉落几率 +70% | 2 |
+| BOUNTY CHIP | UTILITY | 波次结算奖励 +50% | 2 |
+
+![wave-clear draft](docs/screenshots/draft.png)
 
 ## 敌人
 
@@ -121,7 +147,8 @@ neon-rust/
 │  ├─ pickups/            # pickup.tscn + pickup.gd
 │  ├─ waves/              # spawner.gd 波次导演
 │  ├─ camera/             # camera_rig.gd 跟随与震屏
-│  └─ hud/                # hud.tscn + hud.gd HUD 与暂停 / 结算面板
+│  ├─ hud/                # hud.tscn + hud.gd HUD 与暂停 / 结算面板
+│  └─ buffs/              # buff_def / buff_pool + ui/ 波次间三选一（buff_select.tscn）
 ├─ modules/*/assets/      # 素材按归属放置：单模块专用放该模块内
 ├─ modules/global/assets/ # 跨模块共用：arena_floor / crosshair / particle / flash + 8 个音效
 ├─ tools/                 # 资源生成与像素采样脚本（生成结果直接写入各模块 assets/）
@@ -148,16 +175,17 @@ python3 tools/png_sample.py <png> x,y   # 不装 PIL 也能查像素，用于核
 # 无头冒烟测试：加载主场景、跑若干帧、推进波次、开火、冲刺、击杀，全部走真实脚本
 /Applications/Godot.app/Contents/MacOS/Godot --headless --path . res://tests/smoke_test.tscn
 /Applications/Godot.app/Contents/MacOS/Godot --headless --path . res://tests/pause_test.tscn   # 暂停时玩法必须冻结、输入层仍活着
+/Applications/Godot.app/Contents/MacOS/Godot --headless --path . res://tests/buffs_test.tscn   # 抽卡/叠加上限/各项数值生效/三选一时停
 # 期望输出：SMOKE TEST: PASS
 
-# 窗口截图验收：合成输入并抓 4 张图到 /tmp/neon_rust_shots/
+# 窗口截图验收：合成输入并抓 9 张图到 /tmp/neon_rust_shots/
 /Applications/Godot.app/Contents/MacOS/Godot --path . res://tests/capture.tscn
 ```
 
 ## 已知限制 / 下一步
 
 - 音效是纯合成占位，没有音乐轨；`Fx` 里已经留好音效池，换成真素材只需替换 `modules/global/assets/audio/sfx/`。
-- 目前只有一种武器（加“超载”变体），没有升级/商店。
+- 目前只有一种武器（加“超载”变体）；成长靠波次 buff，没有商店或跨局解锁。
 - 场地是单张 1600×1000 底图，没有可破坏掩体或视线遮挡。
 - `tools/generate_assets.py` 仍会顺带生成一张 `floor_tile.png`（早期平铺方案的遗留，当前场景不使用），可以删掉那段代码。
 

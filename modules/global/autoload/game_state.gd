@@ -10,6 +10,11 @@ signal overdrive_changed(active: bool, seconds: float)
 signal run_started
 signal run_ended(final_score: int, best_score: int)
 
+## Buffs picked between waves. `Game` owns the aggregate so nothing else has to
+## know which module contributed what.
+signal buff_changed(def: BuffDef, stacks: int)
+signal enemy_killed(kind: int, at: Vector2)
+
 const SAVE_PATH := "user://neon_rust.cfg"
 const ARENA_SIZE := Vector2(1600.0, 1000.0)
 
@@ -34,12 +39,27 @@ var fx_root: Node2D = null
 var spawner: Node = null
 var camera: Camera2D = null
 
+# --- run buffs -------------------------------------------------------------
+var buffs: Dictionary = {}          # id -> stacks
+var buff_order: Array[String] = []  # acquisition order, for the HUD list
+var buff_damage_mult := 1.0
+var buff_fire_rate_mult := 1.0
+var buff_extra_shots := 0
+var buff_pierce := 0
+var buff_heal_on_kill := 0.0
+var buff_dash_cd_mult := 1.0
+var buff_move_mult := 1.0
+var buff_magnet := 0.0
+var buff_drop_mult := 1.0
+var buff_bounty_mult := 1.0
+
 
 func _ready() -> void:
 	best_score = _load_best()
 
 
 func reset_run() -> void:
+	_reset_buffs()
 	score = 0
 	wave = 0
 	health = max_health
@@ -60,6 +80,85 @@ func clear_scene_refs() -> void:
 	fx_root = null
 	spawner = null
 	camera = null
+
+
+func roll_buffs(count: int) -> Array[BuffDef]:
+	var picked: Array[BuffDef] = []
+	var eligible: Array[BuffDef] = []
+	for def in BuffPool.all():
+		if buff_stacks(def.id) < def.max_stacks:
+			eligible.append(def)
+	if eligible.is_empty():
+		return picked
+	# First pass: one per category, so the three cards always read as a choice.
+	var by_tag := {}
+	for def in eligible:
+		if not by_tag.has(def.tag):
+			by_tag[def.tag] = []
+		(by_tag[def.tag] as Array).append(def)
+	var tags := by_tag.keys()
+	tags.shuffle()
+	for t in tags:
+		if picked.size() >= count:
+			break
+		var group: Array = by_tag[t]
+		group.shuffle()
+		if not group.is_empty():
+			picked.append(group.pop_back())
+	# Second pass: fill leftovers randomly.
+	var rest: Array[BuffDef] = []
+	for def in eligible:
+		if not picked.has(def):
+			rest.append(def)
+	rest.shuffle()
+	while picked.size() < count and not rest.is_empty():
+		picked.append(rest.pop_back())
+	picked.sort_custom(func(a: BuffDef, b: BuffDef) -> bool: return a.tag < b.tag)
+	return picked
+
+
+func buff_stacks(buff_id: String) -> int:
+	return int(buffs.get(buff_id, 0))
+
+
+func add_buff(def: BuffDef) -> bool:
+	if def == null:
+		return false
+	var stacks := buff_stacks(def.id)
+	if stacks >= def.max_stacks:
+		return false
+	buffs[def.id] = stacks + 1
+	if not buff_order.has(def.id):
+		buff_order.append(def.id)
+	buff_damage_mult += def.damage_pct
+	buff_fire_rate_mult += def.fire_rate_pct
+	buff_extra_shots += def.extra_shots
+	buff_pierce += def.pierce
+	buff_heal_on_kill += def.heal_on_kill
+	buff_dash_cd_mult = maxf(0.35, buff_dash_cd_mult - def.dash_cd_pct)
+	buff_move_mult += def.move_pct
+	buff_magnet += def.magnet
+	buff_drop_mult += def.drop_pct
+	buff_bounty_mult += def.bounty_pct
+	if def.health_add > 0 and player is PlayerUnit:
+		(player as PlayerUnit).add_max_health(def.health_add)
+	buff_changed.emit(def, stacks + 1)
+	return true
+
+
+func _reset_buffs() -> void:
+	buffs.clear()
+	buff_order.clear()
+	buff_damage_mult = 1.0
+	buff_fire_rate_mult = 1.0
+	buff_extra_shots = 0
+	buff_pierce = 0
+	buff_heal_on_kill = 0.0
+	buff_dash_cd_mult = 1.0
+	buff_move_mult = 1.0
+	buff_magnet = 0.0
+	buff_drop_mult = 1.0
+	buff_bounty_mult = 1.0
 
 
 func add_score(amount: int) -> void:

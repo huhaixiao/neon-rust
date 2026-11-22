@@ -45,8 +45,11 @@ func _process(delta: float) -> void:
 	if player != null and not player.dead:
 		var to_player: Vector2 = player.global_position - global_position
 		var distance := to_player.length()
-		if distance < 150.0 and distance > 1.0:
-			global_position += to_player / distance * 280.0 * delta
+		# Base pull is a courtesy; MAGNET COIL turns it into a real vacuum.
+		var radius := 150.0 + 280.0 * Game.buff_magnet
+		var pull := 280.0 + 120.0 * Game.buff_magnet
+		if distance < radius and distance > 1.0:
+			global_position += to_player / distance * pull * delta
 	if life < 3.0:
 		sprite.modulate.a = 0.45 + 0.55 * absf(sin(life * 9.0))
 

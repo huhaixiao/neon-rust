@@ -40,6 +40,8 @@ var _flash_tween: Tween = null
 func _ready() -> void:
 	add_to_group("player")
 	Game.player = self
+	if not Game.enemy_killed.is_connected(_on_enemy_killed):
+		Game.enemy_killed.connect(_on_enemy_killed)
 	health = max_health
 	Game.set_health(health, max_health)
 	muzzle_flash.visible = false
@@ -96,7 +98,7 @@ func _move(delta: float) -> void:
 			_ghost_cd = 0.045
 			Fx.ghost(self)
 	else:
-		velocity = input_dir * move_speed
+		velocity = input_dir * move_speed * Game.buff_move_mult
 	position += velocity * delta
 	var bounds := Game.arena.grow(-24.0)
 	global_position = global_position.clamp(bounds.position, bounds.end)
@@ -111,7 +113,7 @@ func _try_dash() -> void:
 	_dash_dir = input_dir.normalized() if input_dir.length() > 0.1 else aim
 	_dashing = true
 	_dash_left = dash_duration
-	_dash_cd = dash_cooldown
+	_dash_cd = _dash_cooldown()
 	_invuln = maxf(_invuln, dash_duration + 0.08)
 	sfx_dash.play()
 	Game.add_shake(0.18)
@@ -124,17 +126,23 @@ func _try_fire() -> void:
 	if not Input.is_action_pressed("fire"):
 		return
 	_shoot()
-	_fire_cd = fire_interval * (0.62 if overdrive_left > 0.0 else 1.0)
+	var rate := fire_interval / Game.buff_fire_rate_mult
+	_fire_cd = rate * (0.62 if overdrive_left > 0.0 else 1.0)
 
 
 func _shoot() -> void:
-	if overdrive_left > 0.0:
-		var spread_damage := bullet_damage * 0.72
-		_spawn_bullet(aim.rotated(-0.13), spread_damage)
-		_spawn_bullet(aim, spread_damage)
-		_spawn_bullet(aim.rotated(0.13), spread_damage)
+	# One fan for every source of extra rounds, so overdrive and SPLIT SHOT
+	# compose instead of fighting over who writes the bullet loop.
+	var count := mini(1 + Game.buff_extra_shots + (2 if overdrive_left > 0.0 else 0), 6)
+	var damage := bullet_damage * Game.buff_damage_mult
+	var per := damage if count == 1 else damage * 0.72
+	if count == 1:
+		_spawn_bullet(aim, per)
 	else:
-		_spawn_bullet(aim, bullet_damage)
+		var step := 0.13
+		var half := step * float(count - 1) * 0.5
+		for i in count:
+			_spawn_bullet(aim.rotated(-half + step * float(i)), per)
 	Game.add_shake(0.05)
 	sfx_shoot.pitch_scale = randf_range(0.94, 1.10)
 	sfx_shoot.play()
@@ -143,7 +151,7 @@ func _shoot() -> void:
 
 func _spawn_bullet(direction: Vector2, damage: float) -> void:
 	var bullet := BULLET_SCENE.instantiate()
-	bullet.setup(direction, damage, bullet_speed, true, Color(0.45, 1.0, 1.0))
+	bullet.setup(direction, damage, bullet_speed, true, Color(0.45, 1.0, 1.0), Game.buff_pierce)
 	bullet.position = muzzle.global_position
 	Game.bullets_root.add_child(bullet)
 
@@ -198,6 +206,21 @@ func take_damage(amount: float, from: Vector2 = Vector2.ZERO) -> void:
 		_die()
 
 
+func add_max_health(amount: int) -> void:
+	# HULL PLATING: raising the cap and filling the new space in one move keeps
+	# the HUD bar honest.
+	max_health += amount
+	health = mini(max_health, health + amount)
+	Game.set_health(health, max_health)
+	Fx.burst(global_position, Color(0.35, 1.0, 0.65), 14, 200.0, 0.8)
+
+
+func _on_enemy_killed(_kind: int, _at: Vector2) -> void:
+	if dead or Game.buff_heal_on_kill <= 0.0:
+		return
+	heal(int(round(Game.buff_heal_on_kill)))
+
+
 func heal(amount: int) -> void:
 	if dead:
 		return
@@ -218,10 +241,15 @@ func is_dash_ready() -> bool:
 	return _dash_cd <= 0.0
 
 
+func _dash_cooldown() -> float:
+	return dash_cooldown * Game.buff_dash_cd_mult
+
+
 func dash_ratio() -> float:
-	if dash_cooldown <= 0.0:
+	var total := _dash_cooldown()
+	if total <= 0.0:
 		return 1.0
-	return clampf(1.0 - _dash_cd / dash_cooldown, 0.0, 1.0)
+	return clampf(1.0 - _dash_cd / total, 0.0, 1.0)
 
 
 func _die() -> void:

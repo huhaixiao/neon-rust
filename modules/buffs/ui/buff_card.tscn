@@ -1,0 +1,52 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://modules/buffs/ui/buff_card.gd" id="1_card"]
+[ext_resource type="Theme" path="res://modules/buffs/ui/card_theme.tres" id="2_theme"]
+
+[node name="BuffCard" type="Button"]
+custom_minimum_size = Vector2(296, 176)
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme = ExtResource("2_theme")
+script = ExtResource("1_card")
+
+[node name="Body" type="VBoxContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 18.0
+offset_top = 16.0
+offset_right = -18.0
+offset_bottom = -14.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Tag" type="Label" parent="Body"]
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.56, 0.6, 1)
+theme_override_font_sizes/font_size = 11
+text = "OFFENSE    //    1"
+
+[node name="Title" type="Label" parent="Body"]
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.92, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.02, 0.18, 0.24, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 24
+text = "OVERCLOCK"
+
+[node name="Desc" type="Label" parent="Body"]
+size_flags_vertical = 3
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.56, 0.76, 0.84, 1)
+theme_override_font_sizes/font_size = 12
+text = "PULSE DAMAGE +25%"
+autowrap_mode = 3
+
+[node name="Footer" type="Label" parent="Body"]
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.4, 0.62, 0.7, 1)
+theme_override_font_sizes/font_size = 10
+text = "STACK 1 / 3    [1]"

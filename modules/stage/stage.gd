@@ -7,12 +7,16 @@ extends Node2D
 signal restart_requested
 signal title_requested
 
+const BUFF_SELECT_SCENE := preload("res://modules/buffs/ui/buff_select.tscn")
+
 @onready var hud: GameHud = $UI as GameHud
 @onready var spawner: WaveDirector = $Spawner as WaveDirector
 @onready var camera: Camera2D = $Camera2D
 @onready var crosshair: Sprite2D = $Crosshair
 
 var _paused := false
+var _buff_select: BuffSelect = null
+var _choosing_buff := false
 
 
 func _ready() -> void:
@@ -27,6 +31,10 @@ func _ready() -> void:
 	hud.resume_requested.connect(_on_hud_resume)
 	hud.restart_requested.connect(_restart)
 	hud.title_requested.connect(_leave_to_title)
+	Game.wave_cleared.connect(_on_wave_cleared)
+	_buff_select = BUFF_SELECT_SCENE.instantiate()
+	add_child(_buff_select)
+	_buff_select.chosen.connect(_on_buff_chosen)
 	_freeze_gameplay_while_paused()
 	_setup_camera()
 	Game.run_ended.connect(_on_run_ended)
@@ -62,6 +70,9 @@ func _process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _choosing_buff:
+		# The draft owns input until a card is picked; Esc must not resume play.
+		return
 	if OS.is_debug_build():
 		_log_pad_event(event)
 	if event.is_action_pressed("pause"):
@@ -112,6 +123,31 @@ func _toggle_pause() -> void:
 	get_tree().paused = _paused
 	hud.show_pause(_paused)
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE if _paused else Input.MOUSE_MODE_HIDDEN)
+
+
+func _on_wave_cleared(wave_index: int, bonus: int) -> void:
+	if not Game.running or _choosing_buff:
+		return
+	var choices := Game.roll_buffs(3)
+	if choices.is_empty():
+		return
+	_choosing_buff = true
+	_paused = false
+	hud.show_pause(false)
+	get_tree().paused = true
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	hud.clear_banner()
+	_buff_select.offer(choices, wave_index, bonus)
+
+
+func _on_buff_chosen(def: BuffDef) -> void:
+	if not _choosing_buff:
+		return
+	_choosing_buff = false
+	Game.add_buff(def)
+	get_tree().paused = false
+	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	hud.announce_buff(def)
 
 
 func _on_hud_resume() -> void:

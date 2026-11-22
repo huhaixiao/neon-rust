@@ -108,7 +108,7 @@ func _prune() -> void:
 
 
 func _finish_wave() -> void:
-	var bonus := 25 + wave * 20
+	var bonus := int(round(float(25 + wave * 20) * Game.buff_bounty_mult))
 	Game.add_score(bonus)
 	Game.wave_cleared.emit(wave, bonus)
 	_intermission = 2.8
@@ -123,13 +123,14 @@ func _on_enemy_died(kind: int, at: Vector2) -> void:
 		Enemy.Kind.SPITTER: 30,
 	}
 	Game.add_score(int(values.get(kind, 10)))
+	Game.enemy_killed.emit(kind, at)
 	if not is_inside_tree():
 		return
 	_maybe_drop.call_deferred(at)
 
 
 func _maybe_drop(at: Vector2) -> void:
-	var roll := randf()
+	var roll := randf() / Game.buff_drop_mult
 	if roll < 0.06:
 		_spawn_pickup(Pickup.Kind.HEALTH, at)
 	elif roll < 0.15:

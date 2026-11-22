@@ -77,22 +77,30 @@ func _run() -> void:
 	await get_tree().create_timer(0.4).timeout
 	await _shot("04_pickup")
 
+	# Wave-clear draft: force a clear so the card screen is in the shot set.
+	Game.wave_cleared.emit(2, 65)
+	await get_tree().create_timer(0.55).timeout
+	await _shot("05_draft")
+	var draft := shell.get_node("Stage").get_node("BuffSelect") as BuffSelect
+	(draft.cards_box.get_child(0) as Button).pressed.emit()
+	await get_tree().create_timer(0.55).timeout
+
 	# Pause list, then the options page, so the menus are in the shot set too.
 	var pause := InputEventAction.new()
 	pause.action = "pause"
 	pause.pressed = true
 	Input.parse_input_event(pause)
 	await get_tree().create_timer(0.45).timeout
-	await _shot("05_pause")
+	await _shot("06_pause")
 	(shell.get_node("Stage").get_node("UI") as GameHud).btn_options.pressed.emit()
 	await get_tree().create_timer(0.3).timeout
-	await _shot("06_options")
+	await _shot("07_options")
 
 	# Game-over panel with its buttons.
 	(shell.get_node("Stage").get_node("UI") as GameHud).hide_options()
 	Game.end_run()
 	await get_tree().create_timer(0.4).timeout
-	await _shot("07_gameover")
+	await _shot("08_gameover")
 
 	get_tree().quit(0)
 
