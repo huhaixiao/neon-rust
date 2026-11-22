@@ -99,6 +99,9 @@ func _run() -> void:
 	var draft := shell.get_node("Stage").get_node("BuffSelect") as BuffSelect
 	(draft.cards_box.get_child(0) as Button).pressed.emit()
 	await get_tree().create_timer(0.55).timeout
+	# A couple more modules so the options -> MODULES page has a real list.
+	Game.add_buff(BuffPool.all()[4])
+	Game.add_buff(BuffPool.all()[8])
 
 	# Pause list, then the options page, so the menus are in the shot set too.
 	var pause := InputEventAction.new()
@@ -115,6 +118,18 @@ func _run() -> void:
 	await get_tree().create_timer(0.35).timeout
 	await _shot("07b_options_zh")
 	L10n.set_locale("en", false)
+	await get_tree().create_timer(0.2).timeout
+	# Loadout page: every acquired module, reachable from OPTIONS.
+	var pause_hud := shell.get_node("Stage").get_node("UI") as GameHud
+	pause_hud.btn_build.pressed.emit()
+	await get_tree().create_timer(0.35).timeout
+	await _shot("07c_build")
+	L10n.set_locale("zh", false)
+	await get_tree().create_timer(0.25).timeout
+	await _shot("07d_build_zh")
+	L10n.set_locale("en", false)
+	await get_tree().create_timer(0.2).timeout
+	pause_hud.btn_build_back.pressed.emit()
 	await get_tree().create_timer(0.2).timeout
 
 	# Game-over panel with its buttons.

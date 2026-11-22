@@ -81,6 +81,24 @@ func _run() -> void:
 		_fail("SOUND button did not unmute the bus")
 	# Fullscreen is only asserted as a no-crash toggle: headless windows ignore it.
 	hud.btn_fullscreen.pressed.emit()
+
+	# --- options: read the current loadout ---------------------------------
+	Game.add_buff(BuffPool.all()[0])
+	hud.btn_build.pressed.emit()
+	await get_tree().process_frame
+	if not hud.build_layer.visible or hud.options_layer.visible:
+		_fail("MODULES did not open the loadout page")
+	if hud.build_rows.get_child_count() != 1:
+		_fail("loadout page did not list the acquired module")
+	if get_viewport().gui_get_focus_owner() != hud.btn_build_back:
+		_fail("loadout page did not focus BACK")
+	hud.btn_build_back.pressed.emit()
+	await get_tree().process_frame
+	if hud.build_layer.visible or not hud.options_layer.visible:
+		_fail("loadout BACK did not return to options")
+	if get_viewport().gui_get_focus_owner() != hud.btn_build:
+		_fail("loadout BACK did not restore focus")
+
 	hud.btn_back.pressed.emit()
 	await get_tree().process_frame
 	if hud.options_layer.visible or not hud.pause_layer.visible:

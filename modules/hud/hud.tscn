@@ -416,7 +416,126 @@ theme_override_styles/focus = SubResource("btn_focus")
 theme_override_styles/pressed = SubResource("btn_pressed")
 text = "LANGUAGE    ENGLISH"
 
+[node name="BtnBuild" type="Button" parent="Root/OptionsLayer/Panel"]
+theme_override_colors/font_color = Color(0.62, 0.9, 1, 1)
+theme_override_colors/font_hover_color = Color(0.92, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("btn_normal")
+theme_override_styles/hover = SubResource("btn_hover")
+theme_override_styles/focus = SubResource("btn_focus")
+theme_override_styles/pressed = SubResource("btn_pressed")
+text = "MODULES    00"
+
 [node name="BtnBack" type="Button" parent="Root/OptionsLayer/Panel"]
+theme_override_colors/font_color = Color(0.62, 0.9, 1, 1)
+theme_override_colors/font_hover_color = Color(0.92, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("btn_normal")
+theme_override_styles/hover = SubResource("btn_hover")
+theme_override_styles/focus = SubResource("btn_focus")
+theme_override_styles/pressed = SubResource("btn_pressed")
+text = "BACK"
+
+[node name="BuildLayer" type="Control" parent="Root"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+
+[node name="Dim" type="ColorRect" parent="Root/BuildLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.01, 0.02, 0.04, 0.9)
+
+[node name="Panel" type="VBoxContainer" parent="Root/BuildLayer"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -430.0
+offset_top = -260.0
+offset_right = 430.0
+offset_bottom = 260.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="TitleRow" type="HBoxContainer" parent="Root/BuildLayer/Panel"]
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="Root/BuildLayer/Panel/TitleRow"]
+theme_override_colors/font_color = Color(0.85, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.02, 0.3, 0.4, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 32
+text = "LOADOUT"
+
+[node name="Count" type="Label" parent="Root/BuildLayer/Panel/TitleRow"]
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.45, 0.7, 0.78, 1)
+theme_override_font_sizes/font_size = 15
+text = "00 / 11"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="Header" type="HBoxContainer" parent="Root/BuildLayer/Panel"]
+theme_override_constants/separation = 14
+
+[node name="TagHead" type="Label" parent="Root/BuildLayer/Panel/Header"]
+custom_minimum_size = Vector2(80, 0)
+theme_override_colors/font_color = Color(0.42, 0.62, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "TAG"
+
+[node name="NameHead" type="Label" parent="Root/BuildLayer/Panel/Header"]
+custom_minimum_size = Vector2(210, 0)
+theme_override_colors/font_color = Color(0.42, 0.62, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "MODULE"
+
+[node name="StackHead" type="Label" parent="Root/BuildLayer/Panel/Header"]
+custom_minimum_size = Vector2(90, 0)
+theme_override_colors/font_color = Color(0.42, 0.62, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "STACK"
+
+[node name="EffectHead" type="Label" parent="Root/BuildLayer/Panel/Header"]
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.42, 0.62, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "EFFECT"
+
+[node name="Rows" type="VBoxContainer" parent="Root/BuildLayer/Panel"]
+size_flags_vertical = 3
+theme_override_constants/separation = 7
+
+[node name="Empty" type="Label" parent="Root/BuildLayer/Panel"]
+visible = false
+theme_override_colors/font_color = Color(0.5, 0.62, 0.66, 1)
+theme_override_font_sizes/font_size = 15
+text = "NO MODULES YET"
+horizontal_alignment = 1
+
+[node name="BuildHint" type="Label" parent="Root/BuildLayer/Panel"]
+theme_override_colors/font_color = Color(0.5, 0.62, 0.66, 1)
+theme_override_font_sizes/font_size = 11
+text = "ESC / START  BACK"
+horizontal_alignment = 1
+
+[node name="BtnBuildBack" type="Button" parent="Root/BuildLayer/Panel"]
+custom_minimum_size = Vector2(320, 0)
+size_flags_horizontal = 4
 theme_override_colors/font_color = Color(0.62, 0.9, 1, 1)
 theme_override_colors/font_hover_color = Color(0.92, 1, 1, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)

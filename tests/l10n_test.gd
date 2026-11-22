@@ -85,6 +85,17 @@ func _run() -> void:
 	await get_tree().process_frame
 	if L10n.locale != "zh" or hud.btn_language.text != "语言 中文":
 		_fail("second press did not return to Chinese")
+	# Loadout sub-page localizes too (empty build at this point).
+	hud.btn_build.pressed.emit()
+	await get_tree().process_frame
+	if hud.build_title.text != "本局装配" or hud.btn_build_back.text != "返回":
+		_fail("loadout page did not localize")
+	if not hud.build_empty.visible:
+		_fail("empty loadout did not show its placeholder")
+	if not hud.build_hint.text.begins_with("ESC / START"):
+		_fail("loadout hint did not localize")
+	hud.btn_build_back.pressed.emit()
+	await get_tree().process_frame
 	hud.btn_back.pressed.emit()
 	hud.btn_resume.pressed.emit()
 	await get_tree().process_frame

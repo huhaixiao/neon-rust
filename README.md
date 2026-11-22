@@ -52,9 +52,14 @@ HUD 会检测是否接了手柄：接了就把提示切成手柄说法（`RT FIR
 | `RESUME` | 继续这一局 |
 | `RESTART RUN` | 立刻重开（不用先死；暂停态按 `R` 同效） |
 | `OPTIONS` | 全屏 / 静音 / 语言开关，`Esc` 返回上一级 |
+| `MODULES` | 本局已选模块清单：方向、名称、层数 / 上限、当前效果 |
 | `QUIT TO TITLE` | 直接退回首页 |
 
 打开菜单时焦点自动落在 `RESUME`，手柄上按 `A` 就是继续；菜单里的按键与 `stage.gd` 的热键共用同一套实现（全屏 / 静音都收敛到 `Game` 自动加载）。
+
+`OPTIONS` 里的 `MODULES` 行会打开本局装配页，按取得顺序列出所有已选模块：方向用颜色区分，层数显示 `x当前 / 上限`，右侧是当前叠加后的效果。`Esc` / `START` 逐级返回（装配页 → 选项页 → 暂停列表），选择焦点不会丢。
+
+![本局装配](docs/screenshots/loadout.png)
 
 结算面板同样给了两个按钮：`REDEPLOY`（`R` / `A`）和 `QUIT TO TITLE`（`Esc` / `START`）。
 
@@ -206,7 +211,7 @@ python3 tools/png_sample.py <png> x,y   # 不装 PIL 也能查像素，用于核
 /Applications/Godot.app/Contents/MacOS/Godot --headless --path . res://tests/l10n_test.tscn     # 中英表 key 对齐 / 切换持久化 / 各界面热刷新 / 选卡仍生效
 # 期望输出：SMOKE TEST: PASS
 
-# 窗口截图验收：合成输入并抓 12 张图到 /tmp/neon_rust_shots/（含 3 张中文对照）
+# 窗口截图验收：合成输入并抓 14 张图到 /tmp/neon_rust_shots/（含 4 张中文对照）
 /Applications/Godot.app/Contents/MacOS/Godot --path . res://tests/capture.tscn
 ```
 

@@ -39,7 +39,16 @@ signal title_requested
 @onready var btn_fullscreen: Button = $Root/OptionsLayer/Panel/BtnFullscreen
 @onready var btn_sound: Button = $Root/OptionsLayer/Panel/BtnSound
 @onready var btn_language: Button = $Root/OptionsLayer/Panel/BtnLanguage
+@onready var btn_build: Button = $Root/OptionsLayer/Panel/BtnBuild
 @onready var btn_back: Button = $Root/OptionsLayer/Panel/BtnBack
+@onready var build_layer: Control = $Root/BuildLayer
+@onready var build_title: Label = $Root/BuildLayer/Panel/TitleRow/Title
+@onready var build_count: Label = $Root/BuildLayer/Panel/TitleRow/Count
+@onready var build_header: HBoxContainer = $Root/BuildLayer/Panel/Header
+@onready var build_rows: VBoxContainer = $Root/BuildLayer/Panel/Rows
+@onready var build_empty: Label = $Root/BuildLayer/Panel/Empty
+@onready var build_hint: Label = $Root/BuildLayer/Panel/BuildHint
+@onready var btn_build_back: Button = $Root/BuildLayer/Panel/BtnBuildBack
 @onready var btn_redeploy: Button = $Root/GameOver/Actions/BtnRedeploy
 @onready var btn_title: Button = $Root/GameOver/Actions/BtnTitle
 
@@ -70,6 +79,7 @@ func _ready() -> void:
 	_refresh_input_copy()
 	debug_label.visible = false
 	options_layer.visible = false
+	build_layer.visible = false
 	_wire_menu()
 	_refresh_locale()
 
@@ -143,6 +153,8 @@ func _wire_menu() -> void:
 	btn_fullscreen.pressed.connect(_on_fullscreen_pressed)
 	btn_sound.pressed.connect(_on_sound_pressed)
 	btn_language.pressed.connect(_on_language_pressed)
+	btn_build.pressed.connect(show_build)
+	btn_build_back.pressed.connect(hide_build)
 	btn_redeploy.pressed.connect(func() -> void: restart_requested.emit())
 	btn_title.pressed.connect(func() -> void: title_requested.emit())
 
@@ -162,6 +174,22 @@ func hide_options() -> void:
 	pause_layer.visible = true
 	_clear_focus()
 	btn_options.grab_focus()
+
+
+func show_build() -> void:
+	# Read-only sub-page of options: the run is paused and the stage stays put.
+	options_layer.visible = false
+	build_layer.visible = true
+	_clear_focus()
+	_refresh_build()
+	btn_build_back.grab_focus()
+
+
+func hide_build() -> void:
+	build_layer.visible = false
+	options_layer.visible = true
+	_clear_focus()
+	btn_build.grab_focus()
 
 
 func _clear_focus() -> void:
@@ -203,6 +231,7 @@ func _refresh_locale() -> void:
 	over_title.text = L10n.t("hud.game_over")
 	wave_label.text = L10n.t("hud.wave") % Game.wave
 	_refresh_options()
+	_refresh_build()
 	_refresh_input_copy()
 	_on_health(Game.health, Game.max_health)
 	_reset_best()
@@ -216,11 +245,63 @@ func _refresh_options() -> void:
 	btn_fullscreen.text = L10n.t("hud.fullscreen") % L10n.t("hud.on" if Game.is_fullscreen() else "hud.off")
 	btn_sound.text = L10n.t("hud.sound") % L10n.t("hud.off" if Game.is_muted() else "hud.on")
 	btn_language.text = L10n.t("hud.language") % L10n.language_label()
+	btn_build.text = L10n.t("hud.build") % Game.buff_order.size()
+
+
+func _refresh_build() -> void:
+	build_title.text = L10n.t("hud.build_title")
+	build_count.text = "%02d / %02d" % [Game.buff_order.size(), BuffPool.all().size()]
+	build_hint.text = L10n.t("hud.build_hint")
+	btn_build_back.text = L10n.t("hud.back")
+	var heads := ["hud.build.col_tag", "hud.build.col_name", "hud.build.col_stacks", "hud.build.col_effect"]
+	for i in mini(heads.size(), build_header.get_child_count()):
+		(build_header.get_child(i) as Label).text = L10n.t(heads[i])
+	for child in build_rows.get_children():
+		build_rows.remove_child(child)
+		child.free()
+	var by_id := {}
+	for def in BuffPool.all():
+		by_id[def.id] = def
+	for id in Game.buff_order:
+		var def: BuffDef = by_id.get(id)
+		if def != null:
+			build_rows.add_child(_make_build_row(def))
+	var filled := build_rows.get_child_count() > 0
+	build_rows.visible = filled
+	build_empty.visible = not filled
+
+
+func _make_build_row(def: BuffDef) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	_build_cell(row, def.tag_label(), 80.0, def.tag_color())
+	_build_cell(row, def.display_name(), 210.0, Color(0.86, 1.0, 1.0, 1.0))
+	_build_cell(row, "x%d / %d" % [Game.buff_stacks(def.id), def.max_stacks], 90.0, Color(0.52, 0.72, 0.78, 1.0))
+	var effect := _build_cell(row, def.display_desc(), 420.0, Color(0.58, 0.76, 0.82, 1.0))
+	effect.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	effect.clip_text = true
+	return row
+
+
+func _build_cell(row: HBoxContainer, text: String, width: float, color: Color) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 14)
+	label.add_theme_color_override("font_color", color)
+	if width > 0.0:
+		label.custom_minimum_size = Vector2(width, 0.0)
+	row.add_child(label)
+	return label
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	# Esc / START closes the options page; the stage only sees Esc when the
-	# pause list itself is on screen.
+	# Esc / START steps back one layer: build list -> options -> pause list.
+	if build_layer.visible:
+		if event.is_action_pressed("pause"):
+			get_viewport().set_input_as_handled()
+			hide_build()
+		return
 	if not options_layer.visible:
 		return
 	if event.is_action_pressed("pause"):
@@ -231,6 +312,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func show_pause(paused: bool) -> void:
 	pause_layer.visible = paused
 	options_layer.visible = false
+	build_layer.visible = false
 	control_hint.visible = not paused and not game_over.visible
 	if paused:
 		clear_banner()
@@ -320,6 +402,7 @@ func _refresh_buffs() -> void:
 func _on_run_started() -> void:
 	game_over.visible = false
 	pause_layer.visible = false
+	build_layer.visible = false
 	_refresh_input_copy()
 	control_hint.visible = true
 	_reset_best()
