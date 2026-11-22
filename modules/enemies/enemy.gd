@@ -6,9 +6,9 @@ signal died(kind: int, at: Vector2)
 
 enum Kind { CHASER, BRUTE, SPITTER }
 
-const TEX_CHASER := preload("res://assets/sprites/enemy_chaser.png")
-const TEX_BRUTE := preload("res://assets/sprites/enemy_brute.png")
-const TEX_SPITTER := preload("res://assets/sprites/enemy_spitter.png")
+const TEX_CHASER := preload("res://modules/enemies/assets/sprites/enemy_chaser.png")
+const TEX_BRUTE := preload("res://modules/enemies/assets/sprites/enemy_brute.png")
+const TEX_SPITTER := preload("res://modules/enemies/assets/sprites/enemy_spitter.png")
 const BULLET_SCENE := preload("res://modules/projectiles/bullet.tscn")
 
 @export var kind: Kind = Kind.CHASER

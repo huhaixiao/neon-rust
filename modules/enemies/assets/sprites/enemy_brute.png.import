@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bb0m6wvox2khr"
-path="res://.godot/imported/floor_tile.png-5d19a0c75dcf55a0758e725acaefae28.ctex"
+uid="uid://tawhair0yj6y"
+path="res://.godot/imported/enemy_brute.png-e3e5b09ff2384d94303193c78466ebc4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/floor_tile.png"
-dest_files=["res://.godot/imported/floor_tile.png-5d19a0c75dcf55a0758e725acaefae28.ctex"]
+source_file="res://modules/enemies/assets/sprites/enemy_brute.png"
+dest_files=["res://.godot/imported/enemy_brute.png-e3e5b09ff2384d94303193c78466ebc4.ctex"]
 
 [params]
 

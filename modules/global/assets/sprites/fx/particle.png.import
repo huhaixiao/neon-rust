@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cea8h5pq4htc"
-path="res://.godot/imported/enemy_chaser.png-7e48d9be28078a5cf47c122af559369d.ctex"
+uid="uid://cra4f5h1mggj4"
+path="res://.godot/imported/particle.png-d977fc6aed17cd70661ae5a9eff27a69.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/enemy_chaser.png"
-dest_files=["res://.godot/imported/enemy_chaser.png-7e48d9be28078a5cf47c122af559369d.ctex"]
+source_file="res://modules/global/assets/sprites/fx/particle.png"
+dest_files=["res://.godot/imported/particle.png-d977fc6aed17cd70661ae5a9eff27a69.ctex"]
 
 [params]
 

@@ -1,10 +1,10 @@
 [gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://main.gd" id="1_main"]
-[ext_resource type="Texture2D" path="res://assets/sprites/arena_floor.png" id="2_floor"]
+[ext_resource type="Texture2D" path="res://modules/global/assets/sprites/world/arena_floor.png" id="2_floor"]
 [ext_resource type="PackedScene" path="res://modules/player/player.tscn" id="3_player"]
 [ext_resource type="PackedScene" path="res://modules/hud/hud.tscn" id="4_hud"]
-[ext_resource type="Texture2D" path="res://assets/sprites/crosshair.png" id="5_crosshair"]
+[ext_resource type="Texture2D" path="res://modules/global/assets/sprites/ui/crosshair.png" id="5_crosshair"]
 [ext_resource type="Script" path="res://modules/camera/camera_rig.gd" id="6_camera"]
 [ext_resource type="Script" path="res://modules/waves/spawner.gd" id="7_spawner"]
 

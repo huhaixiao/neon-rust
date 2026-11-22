@@ -96,9 +96,9 @@ neon-rust/
 │  ├─ waves/              # spawner.gd 波次导演
 │  ├─ camera/             # camera_rig.gd 跟随与震屏
 │  └─ hud/                # hud.tscn + hud.gd HUD 与暂停 / 结算面板
-├─ assets/sprites/        # 全部由脚本生成，无外部素材
-├─ assets/sounds/         # 8 个合成音效
-├─ tools/                 # 资源生成与像素采样脚本（纯标准库，无第三方依赖）
+├─ modules/*/assets/      # 素材按归属放置：单模块专用放该模块内
+├─ modules/global/assets/ # 跨模块共用：arena_floor / crosshair / particle / flash + 8 个音效
+├─ tools/                 # 资源生成与像素采样脚本（生成结果直接写入各模块 assets/）
 ├─ tests/                 # 无头冒烟测试 + 窗口截图脚本
 └─ docs/screenshots/      # 验收截图
 ```
@@ -130,7 +130,7 @@ python3 tools/png_sample.py <png> x,y   # 不装 PIL 也能查像素，用于核
 
 ## 已知限制 / 下一步
 
-- 音效是纯合成占位，没有音乐轨；`Fx` 里已经留好音效池，换成真素材只需替换 `assets/sounds/`。
+- 音效是纯合成占位，没有音乐轨；`Fx` 里已经留好音效池，换成真素材只需替换 `modules/global/assets/audio/sfx/`。
 - 目前只有一种武器（加“超载”变体），没有升级/商店。
 - 场地是单张 1600×1000 底图，没有可破坏掩体或视线遮挡。
 - `tools/generate_assets.py` 仍会顺带生成一张 `floor_tile.png`（早期平铺方案的遗留，当前场景不使用），可以删掉那段代码。

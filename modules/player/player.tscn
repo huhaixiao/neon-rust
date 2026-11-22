@@ -1,11 +1,11 @@
 [gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://modules/player/player.gd" id="1_player"]
-[ext_resource type="Texture2D" path="res://assets/sprites/player.png" id="2_ship"]
-[ext_resource type="Texture2D" path="res://assets/sprites/flash.png" id="3_flash"]
-[ext_resource type="AudioStreamWAV" path="res://assets/sounds/shoot.wav" id="4_shoot"]
-[ext_resource type="AudioStreamWAV" path="res://assets/sounds/dash.wav" id="5_dash"]
-[ext_resource type="AudioStreamWAV" path="res://assets/sounds/player_hit.wav" id="6_hurt"]
+[ext_resource type="Texture2D" path="res://modules/player/assets/sprites/player.png" id="2_ship"]
+[ext_resource type="Texture2D" path="res://modules/global/assets/sprites/fx/flash.png" id="3_flash"]
+[ext_resource type="AudioStreamWAV" path="res://modules/global/assets/audio/sfx/shoot.wav" id="4_shoot"]
+[ext_resource type="AudioStreamWAV" path="res://modules/global/assets/audio/sfx/dash.wav" id="5_dash"]
+[ext_resource type="AudioStreamWAV" path="res://modules/global/assets/audio/sfx/player_hit.wav" id="6_hurt"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_player"]
 radius = 19.0

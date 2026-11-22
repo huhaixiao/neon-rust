@@ -3,17 +3,17 @@ extends Node
 ## pooled SFX player. Everything spawns into Game.fx_root so the scene owns the
 ## lifetime. Autoloaded as `Fx`.
 
-const PARTICLE_TEX := preload("res://assets/sprites/particle.png")
-const FLASH_TEX := preload("res://assets/sprites/flash.png")
+const PARTICLE_TEX := preload("res://modules/global/assets/sprites/fx/particle.png")
+const FLASH_TEX := preload("res://modules/global/assets/sprites/fx/flash.png")
 
-const SFX_SHOOT := preload("res://assets/sounds/shoot.wav")
-const SFX_HIT := preload("res://assets/sounds/hit.wav")
-const SFX_DIE := preload("res://assets/sounds/die.wav")
-const SFX_HURT := preload("res://assets/sounds/player_hit.wav")
-const SFX_DASH := preload("res://assets/sounds/dash.wav")
-const SFX_PICKUP := preload("res://assets/sounds/pickup.wav")
-const SFX_WAVE := preload("res://assets/sounds/wave.wav")
-const SFX_GAMEOVER := preload("res://assets/sounds/gameover.wav")
+const SFX_SHOOT := preload("res://modules/global/assets/audio/sfx/shoot.wav")
+const SFX_HIT := preload("res://modules/global/assets/audio/sfx/hit.wav")
+const SFX_DIE := preload("res://modules/global/assets/audio/sfx/die.wav")
+const SFX_HURT := preload("res://modules/global/assets/audio/sfx/player_hit.wav")
+const SFX_DASH := preload("res://modules/global/assets/audio/sfx/dash.wav")
+const SFX_PICKUP := preload("res://modules/global/assets/audio/sfx/pickup.wav")
+const SFX_WAVE := preload("res://modules/global/assets/audio/sfx/wave.wav")
+const SFX_GAMEOVER := preload("res://modules/global/assets/audio/sfx/gameover.wav")
 
 const MAX_LIVE_PARTICLES := 140
 const MAX_PLAYERS := 12

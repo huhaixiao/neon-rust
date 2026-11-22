@@ -4,8 +4,8 @@ extends Area2D
 
 enum Kind { HEALTH, OVERDRIVE }
 
-const TEX_HEALTH := preload("res://assets/sprites/pickup_health.png")
-const TEX_OVERDRIVE := preload("res://assets/sprites/pickup_overdrive.png")
+const TEX_HEALTH := preload("res://modules/pickups/assets/sprites/pickup_health.png")
+const TEX_OVERDRIVE := preload("res://modules/pickups/assets/sprites/pickup_overdrive.png")
 
 var kind: Kind = Kind.HEALTH
 var life := 16.0

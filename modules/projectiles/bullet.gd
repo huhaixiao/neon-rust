@@ -3,8 +3,8 @@ extends Area2D
 ## Shared bullet for both sides. `setup()` must be called before the node is
 ## added to the tree, because collision layers are applied in `_ready()`.
 
-const TEX_FRIENDLY := preload("res://assets/sprites/bullet_player.png")
-const TEX_HOSTILE := preload("res://assets/sprites/bullet_enemy.png")
+const TEX_FRIENDLY := preload("res://modules/projectiles/assets/sprites/bullet_player.png")
+const TEX_HOSTILE := preload("res://modules/projectiles/assets/sprites/bullet_enemy.png")
 
 var direction := Vector2.RIGHT
 var speed := 1000.0

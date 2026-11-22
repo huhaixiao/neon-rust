@@ -18,7 +18,26 @@ import struct
 import zlib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT_DIR = os.path.normpath(os.path.join(HERE, "..", "assets", "sprites"))
+ASSET_ROOT = os.path.normpath(os.path.join(HERE, "..", "modules"))
+SPRITE_DIRS = {
+    "player/assets/sprites": ["player.png"],
+    "enemies/assets/sprites": ["enemy_chaser.png", "enemy_brute.png", "enemy_spitter.png"],
+    "projectiles/assets/sprites": ["bullet_player.png", "bullet_enemy.png"],
+    "pickups/assets/sprites": ["pickup_health.png", "pickup_overdrive.png"],
+    "global/assets/sprites/ui": ["crosshair.png"],
+    "global/assets/sprites/fx": ["particle.png", "flash.png"],
+    "global/assets/sprites/legacy": ["floor_tile.png"],
+    "global/assets/sprites/world": ["arena_floor.png"],
+}
+
+
+def out_path(name):
+    """Resolve a generated sprite to its owning module's assets/ folder."""
+    base = os.path.basename(name)
+    for sub, names in SPRITE_DIRS.items():
+        if base in names:
+            return os.path.join(ASSET_ROOT, sub, base)
+    raise KeyError("no destination for sprite " + base)
 
 
 # --------------------------------------------------------------------------
@@ -188,7 +207,7 @@ def render(size, layers, details=()):
 
 
 def write_sprite(name, size, layers, details=()):
-    save_rgba_png(os.path.join(OUT_DIR, name), size, size, render(size, layers, details))
+    save_rgba_png(out_path(name), size, size, render(size, layers, details))
     print("  sprite ->", name, f"{size}x{size}")
 
 
@@ -210,8 +229,9 @@ def main():
     ap.add_argument("--preview", default="", help="also write a contact sheet here")
     args = ap.parse_args()
 
-    print("Generating sprites in", OUT_DIR)
-    os.makedirs(OUT_DIR, exist_ok=True)
+    print("Generating sprites into", ASSET_ROOT)
+    for sub in SPRITE_DIRS:
+        os.makedirs(os.path.join(ASSET_ROOT, sub), exist_ok=True)
 
     # -- player ship -------------------------------------------------------
     ship = [(58, 0), (14, -12), (-10, -30), (-10, -14), (-30, -14),
@@ -354,7 +374,7 @@ def write_floor_tile(name, size):
             row[x * 4 + 1] = _u8(g)
             row[x * 4 + 2] = _u8(b)
             row[x * 4 + 3] = 255
-    save_rgba_png(os.path.join(OUT_DIR, name), size, size, rows)
+    save_rgba_png(out_path(name), size, size, rows)
     print("  sprite ->", name, f"{size}x{size} (tiling)")
 
 
@@ -369,7 +389,7 @@ def write_contact_sheet(path):
     rows_n = (len(names) + cols - 1) // cols
     sheet = [bytearray([12, 12, 18, 255] * (cell * cols)) for _ in range(cell * rows_n)]
     for i, name in enumerate(names):
-        src = read_png(os.path.join(OUT_DIR, name))
+        src = read_png(out_path(name))
         sw, sh, pixels = src
         ox = (i % cols) * cell + (cell - sw) // 2
         oy = (i // cols) * cell + (cell - sh) // 2

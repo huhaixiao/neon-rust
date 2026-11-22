@@ -13,7 +13,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from generate_assets import OUT_DIR, _hash, save_rgba_png  # noqa: E402
+from generate_assets import _hash, out_path, save_rgba_png  # noqa: E402
 
 WIDTH = 1600
 HEIGHT = 1000
@@ -115,7 +115,7 @@ def build():
                 set_pixel(rows, ox + sx * i, oy + sy * t, (86, 232, 255))
                 set_pixel(rows, ox + sx * t, oy + sy * i, (86, 232, 255))
 
-    path = os.path.join(OUT_DIR, "arena_floor.png")
+    path = out_path("arena_floor.png")
     save_rgba_png(path, WIDTH, HEIGHT, rows)
     print("arena floor ->", path)
 

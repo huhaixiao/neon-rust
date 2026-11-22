@@ -16,7 +16,7 @@ import struct
 import wave
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT_DIR = os.path.normpath(os.path.join(HERE, "..", "assets", "sounds"))
+OUT_DIR = os.path.normpath(os.path.join(HERE, "..", "modules", "global", "assets", "audio", "sfx"))
 SR = 44100
 
 
