@@ -50,14 +50,6 @@ func _on_quit_requested() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("fullscreen"):
-		_toggle_fullscreen()
+		Game.toggle_fullscreen()
 	elif event.is_action_pressed("mute"):
-		AudioServer.set_bus_mute(0, not AudioServer.is_bus_mute(0))
-
-
-func _toggle_fullscreen() -> void:
-	var window := get_window()
-	if window.mode == Window.MODE_EXCLUSIVE_FULLSCREEN or window.mode == Window.MODE_FULLSCREEN:
-		window.mode = Window.MODE_WINDOWED
-	else:
-		window.mode = Window.MODE_FULLSCREEN
+		Game.toggle_mute()

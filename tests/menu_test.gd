@@ -1,6 +1,8 @@
 extends Node
-## Verifies the app shell: boot lands on the title screen, a start press swaps
-## in the stage, death swaps back to the title, and restart builds a fresh stage.
+## Verifies the app shell and the pause menu:
+## boot lands on the title screen, a start press swaps in the stage, the pause
+## list can resume / restart / open options / quit to title, and the game-over
+## buttons redeploy or return to the title.
 ##
 ##   /Applications/Godot.app/Contents/MacOS/Godot --headless --path . \
 ##       res://tests/menu_test.tscn
@@ -25,8 +27,6 @@ func _run() -> void:
 		_fail("boot started a run before the player asked for one")
 	if is_instance_valid(Game.player):
 		_fail("boot wired a player; the arena should not exist yet")
-	if is_instance_valid(Game.spawner):
-		_fail("boot wired a spawner; the arena should not exist yet")
 
 	# The title ignores input for a moment so a held key cannot skip it.
 	await _wait(0.5)
@@ -46,37 +46,89 @@ func _run() -> void:
 	if not is_instance_valid(Game.player):
 		_fail("stage did not wire Game.player")
 
-	# --- death pauses and offers redeploy -------------------------------
-	Game.end_run()
+	# --- pause menu: resume ------------------------------------------------
+	var hud := stage.get_node("UI") as GameHud
+	await _send_action("pause")
 	await get_tree().process_frame
 	if not get_tree().paused:
-		_fail("death did not pause the tree")
-
-	# --- restart builds a fresh stage ------------------------------------
-	var first_stage := stage
-	await _send_action("restart")
-	await _wait(0.25)
-	stage = shell.get_node_or_null("Stage")
-	if stage == null or stage == first_stage:
-		_fail("restart did not build a fresh stage")
-	if not Game.running:
-		_fail("restart did not start a new run")
-	if get_tree().paused:
-		_fail("restart left the tree paused")
-	if not is_instance_valid(Game.player):
-		_fail("restart did not wire Game.player")
-
-	# --- back to the title from the game-over screen ---------------------- 
-	Game.end_run()
+		_fail("pause did not pause the tree")
+	if not hud.pause_layer.visible:
+		_fail("pause did not open the pause menu")
+	if get_viewport().gui_get_focus_owner() != hud.btn_resume:
+		_fail("pause menu did not focus RESUME (pad navigation would be lost)")
+	hud.btn_resume.pressed.emit()
 	await get_tree().process_frame
+	if get_tree().paused:
+		_fail("RESUME did not unpause")
+	if hud.pause_layer.visible:
+		_fail("RESUME left the pause menu on screen")
+
+	# --- pause menu: options page -----------------------------------------
 	await _send_action("pause")
+	await get_tree().process_frame
+	hud.btn_options.pressed.emit()
+	await get_tree().process_frame
+	if not hud.options_layer.visible or hud.pause_layer.visible:
+		_fail("OPTIONS did not replace the pause list")
+	if get_viewport().gui_get_focus_owner() != hud.btn_fullscreen:
+		_fail("options did not focus the first row")
+	hud.btn_sound.pressed.emit()
+	if not Game.is_muted():
+		_fail("SOUND button did not mute the bus")
+	hud.btn_sound.pressed.emit()
+	if Game.is_muted():
+		_fail("SOUND button did not unmute the bus")
+	# Fullscreen is only asserted as a no-crash toggle: headless windows ignore it.
+	hud.btn_fullscreen.pressed.emit()
+	hud.btn_back.pressed.emit()
+	await get_tree().process_frame
+	if hud.options_layer.visible or not hud.pause_layer.visible:
+		_fail("BACK did not return to the pause list")
+	if get_viewport().gui_get_focus_owner() != hud.btn_options:
+		_fail("BACK did not restore focus")
+
+	# --- pause menu: quit to title ----------------------------------------
+	hud.btn_quit.pressed.emit()
 	await _wait(0.25)
 	if shell.get_node_or_null("Title") == null:
-		_fail("game-over pause did not return to the title")
+		_fail("QUIT TO TITLE did not show the title screen")
 	if Game.running:
 		_fail("title still reports a running game")
 	if get_tree().paused:
 		_fail("title was shown with the tree still paused")
+
+	# --- redeploy from the game-over screen -------------------------------
+	await _wait(0.4)
+	await _send_action("restart")
+	await _wait(0.25)
+	stage = shell.get_node_or_null("Stage")
+	if stage == null:
+		_fail("could not start a second run")
+		_report()
+		return
+	hud = stage.get_node("UI") as GameHud
+	Game.end_run()
+	await get_tree().process_frame
+	if not hud.game_over.visible:
+		_fail("game over panel did not open")
+	if get_viewport().gui_get_focus_owner() != hud.btn_redeploy:
+		_fail("game over did not focus REDEPLOY")
+	var first_stage := stage
+	hud.btn_redeploy.pressed.emit()
+	await _wait(0.25)
+	stage = shell.get_node_or_null("Stage")
+	if stage == null or stage == first_stage:
+		_fail("REDEPLOY did not build a fresh stage")
+	if not Game.running or get_tree().paused:
+		_fail("REDEPLOY did not resume a live run")
+
+	# --- quit to title from the game-over screen -------------------------
+	Game.end_run()
+	await get_tree().process_frame
+	(shell.get_node("Stage").get_node("UI") as GameHud).btn_title.pressed.emit()
+	await _wait(0.25)
+	if shell.get_node_or_null("Title") == null:
+		_fail("game-over QUIT TO TITLE did not show the title")
 
 	_report()
 

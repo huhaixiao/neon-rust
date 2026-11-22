@@ -5,6 +5,11 @@ extends CanvasLayer
 
 const BAR_WIDTH := 296.0
 
+## Pause menu requests; the stage owns what they actually do.
+signal resume_requested
+signal restart_requested
+signal title_requested
+
 @onready var hull_label: Label = $Root/HullLabel
 @onready var health_fill: ColorRect = $Root/HealthBack/HealthFill
 @onready var weapon_label: Label = $Root/WeaponLabel
@@ -18,9 +23,19 @@ const BAR_WIDTH := 296.0
 @onready var over_score: Label = $Root/GameOver/ScoreValue
 @onready var over_best: Label = $Root/GameOver/BestValue
 @onready var control_hint: Label = $Root/ControlHint
-@onready var pause_hint: Label = $Root/PauseLayer/PauseHint
+@onready var pause_hint: Label = $Root/PauseLayer/Panel/PauseHint
 @onready var over_hint: Label = $Root/GameOver/Hint
 @onready var debug_label: Label = $Root/DebugLabel
+@onready var options_layer: Control = $Root/OptionsLayer
+@onready var btn_resume: Button = $Root/PauseLayer/Panel/BtnResume
+@onready var btn_restart: Button = $Root/PauseLayer/Panel/BtnRestart
+@onready var btn_options: Button = $Root/PauseLayer/Panel/BtnOptions
+@onready var btn_quit: Button = $Root/PauseLayer/Panel/BtnQuit
+@onready var btn_fullscreen: Button = $Root/OptionsLayer/Panel/BtnFullscreen
+@onready var btn_sound: Button = $Root/OptionsLayer/Panel/BtnSound
+@onready var btn_back: Button = $Root/OptionsLayer/Panel/BtnBack
+@onready var btn_redeploy: Button = $Root/GameOver/Actions/BtnRedeploy
+@onready var btn_title: Button = $Root/GameOver/Actions/BtnTitle
 
 var _banner_tween: Tween = null
 var _pad_mode := false
@@ -46,6 +61,9 @@ func _ready() -> void:
 		Input.joy_connection_changed.connect(_on_joypad_changed)
 	_refresh_input_copy()
 	debug_label.visible = false
+	options_layer.visible = false
+	_wire_menu()
+	_refresh_options()
 
 
 func _process(_delta: float) -> void:
@@ -108,9 +126,72 @@ func _update_debug(player: PlayerUnit) -> void:
 		debug_label.text += "\n" + "\n".join(_recent_inputs)
 
 
+func _wire_menu() -> void:
+	btn_resume.pressed.connect(func() -> void: resume_requested.emit())
+	btn_restart.pressed.connect(func() -> void: restart_requested.emit())
+	btn_options.pressed.connect(show_options)
+	btn_quit.pressed.connect(func() -> void: title_requested.emit())
+	btn_back.pressed.connect(hide_options)
+	btn_fullscreen.pressed.connect(_on_fullscreen_pressed)
+	btn_sound.pressed.connect(_on_sound_pressed)
+	btn_redeploy.pressed.connect(func() -> void: restart_requested.emit())
+	btn_title.pressed.connect(func() -> void: title_requested.emit())
+
+
+func show_options() -> void:
+	# Options replaces the pause list rather than stacking on it, so there is
+	# only ever one focused control at a time (pad navigation stays sane).
+	pause_layer.visible = false
+	options_layer.visible = true
+	_clear_focus()
+	_refresh_options()
+	btn_fullscreen.grab_focus()
+
+
+func hide_options() -> void:
+	options_layer.visible = false
+	pause_layer.visible = true
+	_clear_focus()
+	btn_options.grab_focus()
+
+
+func _clear_focus() -> void:
+	var focused := get_viewport().gui_get_focus_owner()
+	if focused != null:
+		focused.release_focus()
+
+
+func _on_fullscreen_pressed() -> void:
+	Game.toggle_fullscreen()
+	_refresh_options()
+
+
+func _on_sound_pressed() -> void:
+	Game.toggle_mute()
+	_refresh_options()
+
+
+func _refresh_options() -> void:
+	btn_fullscreen.text = "FULLSCREEN    %s" % ("ON" if Game.is_fullscreen() else "OFF")
+	btn_sound.text = "SOUND    %s" % ("OFF" if Game.is_muted() else "ON")
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	# Esc / START closes the options page; the stage only sees Esc when the
+	# pause list itself is on screen.
+	if not options_layer.visible:
+		return
+	if event.is_action_pressed("pause"):
+		get_viewport().set_input_as_handled()
+		hide_options()
+
+
 func show_pause(paused: bool) -> void:
 	pause_layer.visible = paused
+	options_layer.visible = false
 	control_hint.visible = not paused and not game_over.visible
+	if paused:
+		btn_resume.grab_focus()
 
 
 func _dash_key() -> String:
@@ -125,11 +206,11 @@ func _refresh_input_copy() -> void:
 	_pad_mode = Input.get_connected_joypads().size() > 0
 	if _pad_mode:
 		control_hint.text = "LSTICK  MOVE     RSTICK  AIM     RT  FIRE     B  DASH"
-		pause_hint.text = "START  OR  ESC  TO  RESUME"
+		pause_hint.text = "DPAD  SELECT     A  CONFIRM     START  RESUME"
 		over_hint.text = "A  REDEPLOY        START  TITLE"
 	else:
 		control_hint.text = "WASD  MOVE     MOUSE  AIM     LMB  FIRE     SPACE  DASH"
-		pause_hint.text = "ESC  TO  RESUME"
+		pause_hint.text = "UP / DOWN  SELECT     ENTER  CONFIRM     ESC  RESUME"
 		over_hint.text = "R  REDEPLOY        ESC  TITLE"
 
 
@@ -174,6 +255,7 @@ func _on_run_ended(final_score: int, best: int) -> void:
 	best_label.text = "BEST  %06d" % best
 	game_over.visible = true
 	control_hint.visible = false
+	btn_redeploy.grab_focus()
 	game_over.modulate.a = 0.0
 	var tween := create_tween()
 	tween.tween_property(game_over, "modulate:a", 1.0, 0.35)

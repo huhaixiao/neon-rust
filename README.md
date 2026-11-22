@@ -41,6 +41,23 @@ HUD 会检测是否接了手柄：接了就把提示切成手柄说法（`RT FIR
 
 键位在 `modules/global/autoload/input_setup.gd` 里用代码注册（运行时写入 InputMap），改键只改这一处；若你在项目设置里手写过同名 action，代码会尊重你的设置。
 
+## 暂停菜单与选项
+
+![暂停菜单](docs/screenshots/pause.png)
+
+`Esc` / 手柄 `START`·`BACK` 暂停后是一张可点击、也能用方向键 / 十字键选的列表：
+
+| 按钮 | 作用 |
+| --- | --- |
+| `RESUME` | 继续这一局 |
+| `RESTART RUN` | 立刻重开（不用先死；暂停态按 `R` 同效） |
+| `OPTIONS` | 全屏 / 静音开关，`Esc` 返回上一级 |
+| `QUIT TO TITLE` | 直接退回首页 |
+
+打开菜单时焦点自动落在 `RESUME`，手柄上按 `A` 就是继续；菜单里的按键与 `stage.gd` 的热键共用同一套实现（全屏 / 静音都收敛到 `Game` 自动加载）。
+
+结算面板同样给了两个按钮：`REDEPLOY`（`R` / `A`）和 `QUIT TO TITLE`（`Esc` / `START`）。
+
 ## 在 Steam Deck 上试玩
 
 导出包已经内嵌 PCK，单个可执行文件即可运行：

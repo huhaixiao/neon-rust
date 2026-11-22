@@ -1,6 +1,70 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://modules/hud/hud.gd" id="1_hud"]
+
+[sub_resource type="StyleBoxFlat" id="btn_normal"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+bg_color = Color(0.026, 0.078, 0.105, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.12, 0.28, 0.35, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="btn_hover"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+bg_color = Color(0.05, 0.18, 0.23, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.72, 0.88, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="btn_focus"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+bg_color = Color(0.05, 0.2, 0.26, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.36, 0.9, 1, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="btn_pressed"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+bg_color = Color(0.09, 0.34, 0.42, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.5, 1, 1, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
 
 [node name="HUD" type="CanvasLayer"]
 process_mode = 3
@@ -171,7 +235,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 2
+mouse_filter = 0
 
 [node name="Dim" type="ColorRect" parent="Root/PauseLayer"]
 anchors_preset = 15
@@ -180,41 +244,159 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.01, 0.02, 0.04, 0.72)
+color = Color(0.01, 0.02, 0.04, 0.8)
 
-[node name="PauseTitle" type="Label" parent="Root/PauseLayer"]
+[node name="Panel" type="VBoxContainer" parent="Root/PauseLayer"]
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -300.0
-offset_top = -70.0
-offset_right = 300.0
-offset_bottom = 20.0
+offset_left = -190.0
+offset_top = -176.0
+offset_right = 190.0
+offset_bottom = 176.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 9
+alignment = 1
+
+[node name="PauseTitle" type="Label" parent="Root/PauseLayer/Panel"]
 theme_override_colors/font_color = Color(0.85, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0.02, 0.3, 0.4, 1)
 theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 44
+theme_override_font_sizes/font_size = 38
 text = "PAUSED"
 horizontal_alignment = 1
 
-[node name="PauseHint" type="Label" parent="Root/PauseLayer"]
+[node name="PauseHint" type="Label" parent="Root/PauseLayer/Panel"]
+theme_override_colors/font_color = Color(0.5, 0.72, 0.8, 1)
+theme_override_font_sizes/font_size = 11
+text = "ESC  RESUME   //   UP / DOWN  SELECT   ENTER / A  CONFIRM"
+horizontal_alignment = 1
+
+[node name="BtnResume" type="Button" parent="Root/PauseLayer/Panel"]
+theme_override_colors/font_color = Color(0.62, 0.9, 1, 1)
+theme_override_colors/font_hover_color = Color(0.92, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("btn_normal")
+theme_override_styles/hover = SubResource("btn_hover")
+theme_override_styles/focus = SubResource("btn_focus")
+theme_override_styles/pressed = SubResource("btn_pressed")
+text = "RESUME"
+
+[node name="BtnRestart" type="Button" parent="Root/PauseLayer/Panel"]
+theme_override_colors/font_color = Color(0.62, 0.9, 1, 1)
+theme_override_colors/font_hover_color = Color(0.92, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("btn_normal")
+theme_override_styles/hover = SubResource("btn_hover")
+theme_override_styles/focus = SubResource("btn_focus")
+theme_override_styles/pressed = SubResource("btn_pressed")
+text = "RESTART RUN"
+
+[node name="BtnOptions" type="Button" parent="Root/PauseLayer/Panel"]
+theme_override_colors/font_color = Color(0.62, 0.9, 1, 1)
+theme_override_colors/font_hover_color = Color(0.92, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("btn_normal")
+theme_override_styles/hover = SubResource("btn_hover")
+theme_override_styles/focus = SubResource("btn_focus")
+theme_override_styles/pressed = SubResource("btn_pressed")
+text = "OPTIONS"
+
+[node name="BtnQuit" type="Button" parent="Root/PauseLayer/Panel"]
+theme_override_colors/font_color = Color(0.62, 0.9, 1, 1)
+theme_override_colors/font_hover_color = Color(0.92, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("btn_normal")
+theme_override_styles/hover = SubResource("btn_hover")
+theme_override_styles/focus = SubResource("btn_focus")
+theme_override_styles/pressed = SubResource("btn_pressed")
+text = "QUIT TO TITLE"
+
+[node name="OptionsLayer" type="Control" parent="Root"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+
+[node name="Dim" type="ColorRect" parent="Root/OptionsLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.01, 0.02, 0.04, 0.84)
+
+[node name="Panel" type="VBoxContainer" parent="Root/OptionsLayer"]
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -300.0
-offset_top = 44.0
-offset_right = 300.0
-offset_bottom = 76.0
+offset_left = -190.0
+offset_top = -136.0
+offset_right = 190.0
+offset_bottom = 136.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_colors/font_color = Color(0.6, 0.85, 0.9, 1)
-theme_override_font_sizes/font_size = 15
-text = "ESC  OR  START  TO  RESUME"
+theme_override_constants/separation = 9
+alignment = 1
+
+[node name="OptionsTitle" type="Label" parent="Root/OptionsLayer/Panel"]
+theme_override_colors/font_color = Color(0.85, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.02, 0.3, 0.4, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 34
+text = "OPTIONS"
 horizontal_alignment = 1
+
+[node name="BtnFullscreen" type="Button" parent="Root/OptionsLayer/Panel"]
+theme_override_colors/font_color = Color(0.62, 0.9, 1, 1)
+theme_override_colors/font_hover_color = Color(0.92, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("btn_normal")
+theme_override_styles/hover = SubResource("btn_hover")
+theme_override_styles/focus = SubResource("btn_focus")
+theme_override_styles/pressed = SubResource("btn_pressed")
+text = "FULLSCREEN    OFF"
+
+[node name="BtnSound" type="Button" parent="Root/OptionsLayer/Panel"]
+theme_override_colors/font_color = Color(0.62, 0.9, 1, 1)
+theme_override_colors/font_hover_color = Color(0.92, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("btn_normal")
+theme_override_styles/hover = SubResource("btn_hover")
+theme_override_styles/focus = SubResource("btn_focus")
+theme_override_styles/pressed = SubResource("btn_pressed")
+text = "SOUND    ON"
+
+[node name="BtnBack" type="Button" parent="Root/OptionsLayer/Panel"]
+theme_override_colors/font_color = Color(0.62, 0.9, 1, 1)
+theme_override_colors/font_hover_color = Color(0.92, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("btn_normal")
+theme_override_styles/hover = SubResource("btn_hover")
+theme_override_styles/focus = SubResource("btn_focus")
+theme_override_styles/pressed = SubResource("btn_pressed")
+text = "BACK"
 
 [node name="GameOver" type="Control" parent="Root"]
 visible = false
@@ -223,7 +405,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 2
+mouse_filter = 0
 
 [node name="Dim" type="ColorRect" parent="Root/GameOver"]
 anchors_preset = 15
@@ -292,12 +474,51 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -300.0
-offset_top = 120.0
+offset_top = 118.0
 offset_right = 300.0
-offset_bottom = 154.0
+offset_bottom = 146.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_colors/font_color = Color(0.95, 0.85, 0.55, 1)
-theme_override_font_sizes/font_size = 15
-text = "R  /  A  REDEPLOY        ESC  TITLE"
+theme_override_font_sizes/font_size = 13
+text = "R / A  REDEPLOY        ESC / START  TITLE"
 horizontal_alignment = 1
+
+[node name="Actions" type="HBoxContainer" parent="Root/GameOver"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -330.0
+offset_top = 158.0
+offset_right = 330.0
+offset_bottom = 196.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+
+[node name="BtnRedeploy" type="Button" parent="Root/GameOver/Actions"]
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.62, 0.9, 1, 1)
+theme_override_colors/font_hover_color = Color(0.92, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("btn_normal")
+theme_override_styles/hover = SubResource("btn_hover")
+theme_override_styles/focus = SubResource("btn_focus")
+theme_override_styles/pressed = SubResource("btn_pressed")
+text = "REDEPLOY"
+
+[node name="BtnTitle" type="Button" parent="Root/GameOver/Actions"]
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.62, 0.9, 1, 1)
+theme_override_colors/font_hover_color = Color(0.92, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("btn_normal")
+theme_override_styles/hover = SubResource("btn_hover")
+theme_override_styles/focus = SubResource("btn_focus")
+theme_override_styles/pressed = SubResource("btn_pressed")
+text = "QUIT TO TITLE"

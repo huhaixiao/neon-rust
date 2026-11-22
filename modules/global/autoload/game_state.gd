@@ -80,6 +80,30 @@ func set_health(current: int, maximum: int) -> void:
 	health_changed.emit(health, maximum)
 
 
+func is_muted() -> bool:
+	return AudioServer.is_bus_mute(0)
+
+
+func toggle_mute() -> bool:
+	var muted := not AudioServer.is_bus_mute(0)
+	AudioServer.set_bus_mute(0, muted)
+	return muted
+
+
+func is_fullscreen() -> bool:
+	var mode := get_window().mode
+	return mode == Window.MODE_FULLSCREEN or mode == Window.MODE_EXCLUSIVE_FULLSCREEN
+
+
+func toggle_fullscreen() -> bool:
+	var window := get_window()
+	if is_fullscreen():
+		window.mode = Window.MODE_WINDOWED
+	else:
+		window.mode = Window.MODE_FULLSCREEN
+	return is_fullscreen()
+
+
 func add_shake(amount: float) -> void:
 	shake = maxf(shake, amount)
 

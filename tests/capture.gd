@@ -22,7 +22,7 @@ func _run() -> void:
 	var shell: Node = load("res://main.tscn").instantiate()
 	add_child(shell)
 	await get_tree().create_timer(0.6).timeout
-	_shot("00_title")
+	await _shot("00_title")
 
 	# Same path a player takes: press start on the title screen.
 	var start := InputEventAction.new()
@@ -36,7 +36,7 @@ func _run() -> void:
 		return
 	await get_tree().create_timer(0.9).timeout
 	Input.warp_mouse(Vector2(760, 300))
-	_shot("01_intro")
+	await _shot("01_intro")
 
 	# Stage a readable fight: a chaser line, a brute and a spitter.
 	await get_tree().create_timer(2.2).timeout
@@ -59,13 +59,13 @@ func _run() -> void:
 	Input.action_press("fire")
 	Input.warp_mouse(Vector2(900, 260))
 	await get_tree().create_timer(0.55).timeout
-	_shot("02_combat")
+	await _shot("02_combat")
 
 	Input.action_press("move_right")
 	await get_tree().create_timer(0.6).timeout
 	Input.action_release("move_right")
 	await get_tree().create_timer(0.35).timeout
-	_shot("03_dash_in")
+	await _shot("03_dash_in")
 	Input.action_release("fire")
 
 	# Drop a pickup in front of the player for a clean read of the sprite set.
@@ -75,7 +75,24 @@ func _run() -> void:
 	pickup.position = origin + Vector2(120, -90)
 	Game.pickups_root.add_child(pickup)
 	await get_tree().create_timer(0.4).timeout
-	_shot("04_pickup")
+	await _shot("04_pickup")
+
+	# Pause list, then the options page, so the menus are in the shot set too.
+	var pause := InputEventAction.new()
+	pause.action = "pause"
+	pause.pressed = true
+	Input.parse_input_event(pause)
+	await get_tree().create_timer(0.45).timeout
+	await _shot("05_pause")
+	(shell.get_node("Stage").get_node("UI") as GameHud).btn_options.pressed.emit()
+	await get_tree().create_timer(0.3).timeout
+	await _shot("06_options")
+
+	# Game-over panel with its buttons.
+	(shell.get_node("Stage").get_node("UI") as GameHud).hide_options()
+	Game.end_run()
+	await get_tree().create_timer(0.4).timeout
+	await _shot("07_gameover")
 
 	get_tree().quit(0)
 

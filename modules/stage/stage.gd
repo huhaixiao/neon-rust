@@ -24,6 +24,9 @@ func _ready() -> void:
 	Game.pickups_root = $Pickups
 	Game.fx_root = $FX
 	Game.spawner = $Spawner
+	hud.resume_requested.connect(_on_hud_resume)
+	hud.restart_requested.connect(_restart)
+	hud.title_requested.connect(_leave_to_title)
 	_freeze_gameplay_while_paused()
 	_setup_camera()
 	Game.run_ended.connect(_on_run_ended)
@@ -67,8 +70,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			# Run is over: the same key / pad button becomes "back to title".
 			get_viewport().set_input_as_handled()
-			call_deferred("emit_signal", "title_requested")
+			_leave_to_title()
 		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("restart") and _paused and event is InputEventKey:
+		# R while the pause list is up restarts without leaving the screen.
+		get_viewport().set_input_as_handled()
+		_restart()
 	elif event.is_action_pressed("restart") and not Game.running:
 		# Mark the event handled BEFORE handing back to the shell: the shell
 		# frees this node, and the viewport lookup would then be null.
@@ -105,6 +112,19 @@ func _toggle_pause() -> void:
 	get_tree().paused = _paused
 	hud.show_pause(_paused)
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE if _paused else Input.MOUSE_MODE_HIDDEN)
+
+
+func _on_hud_resume() -> void:
+	if _paused:
+		_toggle_pause()
+
+
+func _leave_to_title() -> void:
+	_paused = false
+	get_tree().paused = false
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	# Deferred: the quit button lives in the HUD this call is tearing down.
+	call_deferred("emit_signal", "title_requested")
 
 
 func _on_run_ended(_final_score: int, _best: int) -> void:
