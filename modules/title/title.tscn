@@ -1,0 +1,209 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://modules/title/title.gd" id="1_title"]
+[ext_resource type="Texture2D" path="res://modules/global/assets/sprites/world/arena_floor.png" id="2_floor"]
+
+[node name="Title" type="Node2D"]
+script = ExtResource("1_title")
+
+[node name="Backdrop" type="Sprite2D" parent="."]
+texture = ExtResource("2_floor")
+centered = false
+modulate = Color(0.26, 0.3, 0.36, 1)
+
+[node name="UI" type="CanvasLayer" parent="."]
+layer = 2
+
+[node name="Root" type="Control" parent="UI"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Vignette" type="ColorRect" parent="UI/Root"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.012, 0.02, 0.035, 0.58)
+
+[node name="Meta" type="Label" parent="UI/Root"]
+offset_left = 30.0
+offset_top = 20.0
+offset_right = 470.0
+offset_bottom = 44.0
+theme_override_colors/font_color = Color(0.42, 0.62, 0.72, 1)
+theme_override_colors/font_outline_color = Color(0.01, 0.02, 0.04, 1)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 12
+text = "SECTOR  07    //    NEON  RUST"
+
+[node name="BestValue" type="Label" parent="UI/Root"]
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -330.0
+offset_top = 18.0
+offset_right = -30.0
+offset_bottom = 44.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(0.5, 0.8, 0.9, 1)
+theme_override_colors/font_outline_color = Color(0.01, 0.02, 0.04, 1)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 13
+text = "BEST  000000"
+horizontal_alignment = 2
+
+[node name="TitleGlow" type="Label" parent="UI/Root"]
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -540.0
+offset_top = 148.0
+offset_right = 540.0
+offset_bottom = 300.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.16, 0.86, 1, 0.5)
+theme_override_colors/font_outline_color = Color(0.05, 0.55, 0.72, 0.35)
+theme_override_constants/outline_size = 30
+theme_override_font_sizes/font_size = 96
+text = "NEON  RUST"
+horizontal_alignment = 1
+
+[node name="Title" type="Label" parent="UI/Root"]
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -540.0
+offset_top = 148.0
+offset_right = 540.0
+offset_bottom = 300.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.9, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.02, 0.25, 0.35, 1)
+theme_override_constants/outline_size = 12
+theme_override_font_sizes/font_size = 96
+text = "NEON  RUST"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="UI/Root"]
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -540.0
+offset_top = 296.0
+offset_right = 540.0
+offset_bottom = 332.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.82, 0.38, 1)
+theme_override_colors/font_outline_color = Color(0.03, 0.02, 0.01, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 18
+text = "SURVIVE   THE   WAVES"
+horizontal_alignment = 1
+
+[node name="Rule" type="ColorRect" parent="UI/Root"]
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -210.0
+offset_top = 352.0
+offset_right = 210.0
+offset_bottom = 354.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.35, 0.85, 1, 0.5)
+
+[node name="Prompt" type="Label" parent="UI/Root"]
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -540.0
+offset_top = 384.0
+offset_right = 540.0
+offset_bottom = 432.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.85, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.02, 0.3, 0.4, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 26
+text = ">   PRESS   START"
+horizontal_alignment = 1
+
+[node name="PromptHint" type="Label" parent="UI/Root"]
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -540.0
+offset_top = 440.0
+offset_right = 540.0
+offset_bottom = 464.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.45, 0.68, 0.78, 1)
+theme_override_font_sizes/font_size = 12
+text = "ENTER   /   A   /   CLICK"
+horizontal_alignment = 1
+
+[node name="KeyboardHint" type="Label" parent="UI/Root"]
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = -92.0
+offset_right = 640.0
+offset_bottom = -12.0
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.42, 0.62, 0.72, 1)
+theme_override_colors/font_outline_color = Color(0.01, 0.02, 0.04, 1)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 12
+text = "WASD  MOVE      MOUSE  AIM      LMB  FIRE
+SPACE  DASH     ESC  PAUSE"
+
+[node name="PadHintLabel" type="Label" parent="UI/Root"]
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -640.0
+offset_top = -112.0
+offset_right = -30.0
+offset_bottom = -86.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.42, 0.62, 0.72, 1)
+theme_override_colors/font_outline_color = Color(0.01, 0.02, 0.04, 1)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 12
+text = "PAD  //  L-STICK  MOVE    R-STICK  AIM"
+horizontal_alignment = 2
+
+[node name="PadHint" type="Label" parent="UI/Root"]
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -640.0
+offset_top = -84.0
+offset_right = -30.0
+offset_bottom = -58.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.42, 0.62, 0.72, 1)
+theme_override_colors/font_outline_color = Color(0.01, 0.02, 0.04, 1)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 12
+text = "RT  FIRE    B  DASH    START  PAUSE"
+horizontal_alignment = 2
+
+[node name="QuitHint" type="Label" parent="UI/Root"]
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -300.0
+offset_top = -34.0
+offset_right = 300.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.35, 0.5, 0.6, 1)
+theme_override_font_sizes/font_size = 11
+text = "ESC   QUIT"
+horizontal_alignment = 1

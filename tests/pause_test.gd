@@ -14,7 +14,7 @@ func _ready() -> void:
 
 func _run() -> void:
 	await get_tree().process_frame
-	var level: Node = (load("res://main.tscn") as PackedScene).instantiate()
+	var level: Node = (load("res://modules/stage/stage.tscn") as PackedScene).instantiate()
 	add_child(level)
 	await get_tree().process_frame
 	await get_tree().physics_frame

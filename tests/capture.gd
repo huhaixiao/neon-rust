@@ -1,5 +1,6 @@
 extends Node
-## Renders the level for a few seconds, drives synthetic input, and saves
+## Boots the title screen, presses start, then renders the level for a few
+## seconds, drives synthetic input, and saves
 ## viewport captures so the visuals can be reviewed without a human at the keys.
 ##
 ##   /Applications/Godot.app/Contents/MacOS/Godot --path . res://tests/capture.tscn
@@ -18,8 +19,21 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	var level: Node = load("res://main.tscn").instantiate()
-	add_child(level)
+	var shell: Node = load("res://main.tscn").instantiate()
+	add_child(shell)
+	await get_tree().create_timer(0.6).timeout
+	_shot("00_title")
+
+	# Same path a player takes: press start on the title screen.
+	var start := InputEventAction.new()
+	start.action = "restart"
+	start.pressed = true
+	Input.parse_input_event(start)
+	await get_tree().create_timer(0.3).timeout
+	if shell.get_node_or_null("Stage") == null:
+		push_warning("stage did not start from the title screen")
+		get_tree().quit(2)
+		return
 	await get_tree().create_timer(0.9).timeout
 	Input.warp_mouse(Vector2(760, 300))
 	_shot("01_intro")

@@ -1,40 +1,6 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=2 format=3]
 
 [ext_resource type="Script" path="res://main.gd" id="1_main"]
-[ext_resource type="Texture2D" path="res://modules/global/assets/sprites/world/arena_floor.png" id="2_floor"]
-[ext_resource type="PackedScene" path="res://modules/player/player.tscn" id="3_player"]
-[ext_resource type="PackedScene" path="res://modules/hud/hud.tscn" id="4_hud"]
-[ext_resource type="Texture2D" path="res://modules/global/assets/sprites/ui/crosshair.png" id="5_crosshair"]
-[ext_resource type="Script" path="res://modules/camera/camera_rig.gd" id="6_camera"]
-[ext_resource type="Script" path="res://modules/waves/spawner.gd" id="7_spawner"]
 
-[node name="Main" type="Node2D"]
+[node name="Main" type="Node"]
 script = ExtResource("1_main")
-
-[node name="Floor" type="Sprite2D" parent="."]
-z_index = 0
-texture = ExtResource("2_floor")
-centered = false
-
-[node name="Pickups" type="Node2D" parent="."]
-
-[node name="Enemies" type="Node2D" parent="."]
-
-[node name="Player" parent="." instance=ExtResource("3_player")]
-position = Vector2(800, 500)
-
-[node name="Bullets" type="Node2D" parent="."]
-
-[node name="FX" type="Node2D" parent="."]
-
-[node name="Spawner" type="Node2D" parent="."]
-script = ExtResource("7_spawner")
-
-[node name="Camera2D" type="Camera2D" parent="."]
-script = ExtResource("6_camera")
-
-[node name="Crosshair" type="Sprite2D" parent="."]
-z_index = 20
-texture = ExtResource("5_crosshair")
-
-[node name="UI" parent="." instance=ExtResource("4_hud")]

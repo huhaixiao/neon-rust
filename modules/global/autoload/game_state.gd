@@ -50,6 +50,18 @@ func reset_run() -> void:
 	run_started.emit()
 
 
+## Dropped by the app shell whenever a screen is torn down, so stale references
+## to freed nodes never outlive the stage.
+func clear_scene_refs() -> void:
+	player = null
+	bullets_root = null
+	enemies_root = null
+	pickups_root = null
+	fx_root = null
+	spawner = null
+	camera = null
+
+
 func add_score(amount: int) -> void:
 	if not running or amount == 0:
 		return

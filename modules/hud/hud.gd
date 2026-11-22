@@ -126,11 +126,11 @@ func _refresh_input_copy() -> void:
 	if _pad_mode:
 		control_hint.text = "LSTICK  MOVE     RSTICK  AIM     RT  FIRE     B  DASH"
 		pause_hint.text = "START  OR  ESC  TO  RESUME"
-		over_hint.text = "PRESS  A  TO  REDEPLOY"
+		over_hint.text = "A  REDEPLOY        START  TITLE"
 	else:
 		control_hint.text = "WASD  MOVE     MOUSE  AIM     LMB  FIRE     SPACE  DASH"
 		pause_hint.text = "ESC  TO  RESUME"
-		over_hint.text = "PRESS  R  TO  REDEPLOY"
+		over_hint.text = "R  REDEPLOY        ESC  TITLE"
 
 
 func _on_score(value: int) -> void:

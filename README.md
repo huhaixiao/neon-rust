@@ -3,6 +3,8 @@
 俯视角双摇杆射击（Twin-stick shooter），Godot 4.7 / Forward+ / 2D 渲染，1280×720。
 你驾驶一台霓虹涂装的拦截机，在一片锈蚀的废弃竞技场里撑过一波接一波的无人机群。
 
+![首页](docs/screenshots/title.png)
+
 ![战斗画面](docs/screenshots/combat.png)
 
 ## 运行
@@ -15,7 +17,9 @@ open -a Godot /Users/huhaixiao/github/neon-rust
 /Applications/Godot.app/Contents/MacOS/Godot --path /Users/huhaixiao/github/neon-rust
 ```
 
-首次打开会自动导入 `assets/` 下的 PNG/WAV（已随工程附带 `.import`，通常无需等待）。
+启动后先停在首页（标题 / BEST / 操作说明），按 `Enter`、鼠标左键或手柄 `A` 才开始一局；`Esc` 在首页是退出。
+
+首次打开会自动导入 `modules/*/assets/` 下的 PNG/WAV（已随工程附带 `.import`，通常无需等待）。
 
 ## 操作
 
@@ -27,10 +31,13 @@ open -a Godot /Users/huhaixiao/github/neon-rust
 | 冲刺 | `Space` | `B` / `LB` |
 | 暂停 | `Esc` | `START` / `BACK`（左右两个菜单键都行） |
 | 重开 | `R` / `Enter` | `A` |
+| 首页：开始 | `Enter` / 鼠标左键 | `A` |
+| 首页：退出 | `Esc` | — |
+| 结算后：回首页 | `Esc` | `START` / `BACK` |
 | 静音 | `M` | — |
 | 全屏 | `F11` | — |
 
-HUD 会检测是否接了手柄：接了就把提示切成手柄说法（`RT FIRE` / `B DASH` / `START OR ESC TO RESUME` / `PRESS A TO REDEPLOY`），没接就显示键鼠说法。插拔手柄会即时切换。
+HUD 会检测是否接了手柄：接了就把提示切成手柄说法（`RT FIRE` / `B DASH` / `START OR ESC TO RESUME` / `A REDEPLOY / START TITLE`），没接就显示键鼠说法。插拔手柄会即时切换。
 
 键位在 `modules/global/autoload/input_setup.gd` 里用代码注册（运行时写入 InputMap），改键只改这一处；若你在项目设置里手写过同名 action，代码会尊重你的设置。
 
@@ -86,7 +93,9 @@ HUD 会检测是否接了手柄：接了就把提示切成手柄说法（`RT FIR
 ```
 neon-rust/
 ├─ project.godot          # 1280×720，canvas_items 拉伸，Forward+
-├─ main.tscn + main.gd    # 唯一入口：竞技场底图 + 各模块装配 + 输入/暂停/重开
+├─ main.tscn + main.gd    # 唯一入口：应用外壳，只做 首页 ↔ 关卡 切换 + 全局热键
+├─ modules/title/         # 首页：标题 / BEST / 操作说明，等一次 START 才进关
+├─ modules/stage/         # 关卡：竞技场底图 + 玩家/敌人/子弹/拾取装配 + 暂停/重开
 ├─ modules/
 │  ├─ global/autoload/    # Game 全局状态 + 存档 / InputSetup 键位 / Fx 粒子音效池
 │  ├─ player/             # player.tscn + player.gd

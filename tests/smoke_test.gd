@@ -14,9 +14,9 @@ func _ready() -> void:
 
 func _run() -> void:
 	await get_tree().process_frame
-	var level_scene: PackedScene = load("res://main.tscn")
+	var level_scene: PackedScene = load("res://modules/stage/stage.tscn")
 	if level_scene == null:
-		_fail("main.tscn did not load")
+		_fail("stage.tscn did not load")
 		_report()
 		return
 	var level: Node = level_scene.instantiate()
@@ -25,7 +25,7 @@ func _run() -> void:
 	await get_tree().process_frame
 
 	if not is_instance_valid(Game.player):
-		_fail("Game.player was not wired by main.gd")
+		_fail("Game.player was not wired by stage.gd")
 	if not is_instance_valid(Game.bullets_root):
 		_fail("Game.bullets_root was not wired")
 	if not is_instance_valid(Game.spawner):
