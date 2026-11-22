@@ -1,0 +1,139 @@
+<html style="margin:0;padding:0;">
+<meta charset="utf-8">
+<title>Neon Rust 目录结构与扩展性建议</title>
+<div style="width:100%;box-sizing:border-box;background:#07090d;color:#dbe7ef;font-family:-apple-system,'PingFang SC','Helvetica Neue',sans-serif;padding:28px 22px 34px;">
+  <div style="max-width:1220px;margin:0 auto;">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 16px;">
+      <h1 style="margin:0;font-size:27px;letter-spacing:.5px;color:#eaf6ff;">目录结构与扩展性：现状 vs 建议</h1>
+      <span style="font-size:14px;color:#7f97a8;">neon-rust · Godot 4.7.2 · 11 个 .gd / 1,388 行</span>
+    </div>
+
+    <div style="margin:14px 0 24px;padding:12px 16px;border-left:3px solid #ffc857;background:#12100a;border-radius:0 8px 8px 0;font-size:14px;line-height:1.8;color:#e8dcc0;">
+      <strong style="color:#ffc857;">结论</strong>：现在的目录本身不算错，问题在于<strong>“按文件类型分 + 单脚本装下多种敌人 + Game 当节点仓库”</strong>这三件事让加内容变贵。目录可以按功能重排，但真正决定扩展性的是数据和通信方式。
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:14px;">
+
+      <!-- 现状 -->
+      <div style="flex:1 1 430px;min-width:340px;border:1px solid #2a2027;border-radius:12px;background:#0c0a0c;padding:14px 16px;">
+        <div style="font-size:15px;color:#ff9ec4;font-weight:600;margin-bottom:2px;">现状：按文件类型分（flat）</div>
+        <div style="font-size:12.5px;color:#8a7a83;margin-bottom:10px;">加一个敌人要动 3 个文件、且都在不同目录</div>
+        <div style="font-family:ui-monospace,Menlo,monospace;font-size:13.5px;line-height:1.75;white-space:pre;overflow-x:auto;color:#b9c8d2;">
+scenes/          <span style="color:#ff6b9d;">6 个 .tscn 全平铺</span>
+├ main.tscn
+├ player.tscn
+├ enemy.tscn      <span style="color:#ff6b9d;">└ 三种敌人靠 enum 分支</span>
+├ bullet.tscn
+├ pickup.tscn
+└ hud.tscn
+
+scripts/         <span style="color:#ff6b9d;">11 个 .gd 全平铺 + .uid</span>
+├ game_state.gd   <span style="color:#ffc857;">└ 还存 6 个节点引用</span>
+├ input_setup.gd
+├ fx.gd
+├ player.gd
+├ enemy.gd        <span style="color:#ff6b9d;">└ CHASER/BRUTE/SPITTER</span>
+├ bullet.gd
+├ pickup.gd
+├ spawner.gd
+├ camera_rig.gd
+├ hud.gd
+└ main.gd
+
+assets/          <span style="color:#ff6b9d;">sprites + sounds 两层堆一起</span>
+data/            <span style="color:#ff6b9d;">不存在（0 个 .tres）</span>
+shaders/         <span style="color:#5f7d90;">空目录</span>
+</div>
+      </div>
+
+      <!-- 建议 -->
+      <div style="flex:1 1 460px;min-width:360px;border:1px solid #16323a;border-radius:12px;background:#08100f;padding:14px 16px;">
+        <div style="font-size:15px;color:#5ff0d0;font-weight:600;margin-bottom:2px;">建议：按功能分（feature-first）</div>
+        <div style="font-size:12.5px;color:#6f9a92;margin-bottom:10px;">一个功能的场景 / 脚本 / 数据放在同一棵树里</div>
+        <div style="font-family:ui-monospace,Menlo,monospace;font-size:13.5px;line-height:1.75;white-space:pre;overflow-x:auto;color:#b9c8d2;">
+core/            <span style="color:#5ff0d0;">全局层，只有常驻逻辑</span>
+├ events.gd       <span style="color:#5ff0d0;">事件总线（替代节点引用）</span>
+├ game_state.gd   <span style="color:#5ff0d0;">分数/波次/存档</span>
+└ input_setup.gd
+
+entities/
+├ player/    player.tscn · player.gd
+│            player_stats.tres   <span style="color:#5ff0d0;">数值进数据</span>
+├ enemies/   enemy_base.gd
+│            chaser.tscn/gd  brute.tscn/gd
+│            spitter.tscn/gd
+├ bullets/   bullet.tscn · bullet.gd
+└ pickups/   pickup.tscn · pickup.gd
+
+systems/
+├ waves/     spawner.gd · waves.tres
+├ fx/        fx.gd · burst.tscn
+└ camera/    camera_rig.gd
+
+ui/
+├ hud/       hud.tscn · hud.gd · theme.tres
+└ debug/     debug_overlay.tscn
+
+data/            <span style="color:#5ff0d0;">纯资源，无脚本</span>
+├ enemies/   chaser.tres  brute.tres  spitter.tres
+└ drops/     drop_table.tres
+
+assets/  sprites/ · audio/ · fonts/
+addons/  第三方插件（不手改）
+world/   main.tscn · arena.tscn
+</div>
+      </div>
+    </div>
+
+    <h2 style="font-size:17px;margin:30px 0 10px;color:#eaf6ff;font-weight:600;">四个真正拖扩展性的点</h2>
+    <div style="overflow-x:auto;border:1px solid #17232f;border-radius:12px;background:#0a0e14;">
+      <table style="width:100%;border-collapse:collapse;font-size:14px;min-width:760px;">
+        <thead>
+          <tr style="background:#101821;color:#9fb3c2;text-align:left;">
+            <th style="padding:10px 14px;font-weight:600;">现状</th>
+            <th style="padding:10px 14px;font-weight:600;">为什么会疼</th>
+            <th style="padding:10px 14px;font-weight:600;">怎么改</th>
+          </tr>
+        </thead>
+        <tbody style="color:#cfe0ec;">
+          <tr style="border-top:1px solid #161f29;">
+            <td style="padding:10px 14px;color:#ff9ec4;">enemy.gd 一个脚本三种敌人</td>
+            <td style="padding:10px 14px;">加第四种敌人 = 改 if/elif、改 spawner 的权重表、改 hp_ramp 分支，三处联动，还容易漏</td>
+            <td style="padding:10px 14px;color:#5ff0d0;">抽 enemy_base.gd + 每种敌人一个 .tscn，数值放 EnemyDef.tres，spawner 只读数据表</td>
+          </tr>
+          <tr style="border-top:1px solid #161f29;">
+            <td style="padding:10px 14px;color:#ff9ec4;">Game 里存 player / bullets_root / spawner / camera</td>
+            <td style="padding:10px 14px;">任何一个节点改路径或换场景，全局报错；Game 变成隐式全局变量袋，单测也难跑</td>
+            <td style="padding:10px 14px;color:#5ff0d0;">节点自注册到 groups（"player" / "bullets"），需要时 get_tree().get_first_node_in_group()；跨系统事件走 events.gd 信号</td>
+          </tr>
+          <tr style="border-top:1px solid #161f29;">
+            <td style="padding:10px 14px;color:#ff9ec4;">没有任何 .tres 数据资源</td>
+            <td style="padding:10px 14px;">波次、掉落率、敌人属性全是魔法数字写在代码里，策划/调平衡要改代码</td>
+            <td style="padding:10px 14px;color:#5ff0d0;">@export var def: EnemyDef 配合 Resource 子类，平衡表变成 data/ 下可 diff 的文本</td>
+          </tr>
+          <tr style="border-top:1px solid #161f29;">
+            <td style="padding:10px 14px;color:#ff9ec4;">scenes/ 与 scripts/ 分家</td>
+            <td style="padding:10px 14px;">改 player 要在两个目录来回跳；删除/移动时 .tscn 的 ext_resource 路径容易断，.uid 也要跟着搬</td>
+            <td style="padding:10px 14px;color:#5ff0d0;">同功能同目录、同名同放：entities/player/player.tscn + player.gd，用编辑器移动会自动修引用</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 style="font-size:17px;margin:30px 0 10px;color:#eaf6ff;font-weight:600;">迁移顺序（低风险，四步）</h2>
+    <div style="border:1px solid #17232f;border-radius:12px;background:#0a0e14;padding:16px 18px;font-size:14px;line-height:1.95;color:#cfe0ec;">
+      <div><span style="color:#5ff0d0;font-weight:600;">1 · 先搬目录，不动逻辑</span>　用 Godot 编辑器里的 FileSystem 面板拖动（不要用 shell mv），.tscn 的 ext_resource 与 .uid 会自动重写；搬完跑一遍 smoke + pause 测试。</div>
+      <div><span style="color:#5ff0d0;font-weight:600;">2 · 再拆敌人</span>　enemy_base.gd 收敛公共逻辑（追击、受击、死亡掉落），三种敌人各自一个场景继承；spawner 改成读 waves.tres。</div>
+      <div><span style="color:#5ff0d0;font-weight:600;">3 · 最后解耦 Game</span>　节点改为加入 group，Game 只留分数/波次/存档和信号；这一步才需要动 main.gd 的装配代码。</div>
+      <div><span style="color:#5ff0d0;font-weight:600;">4 · 收尾</span>　补 addons/ 与 data/，更新 export_presets.cfg 的 exclude_filter（新增目录若不该进包要排除），重新出 Deck 包。</div>
+    </div>
+
+    <div style="margin-top:18px;font-size:13.5px;line-height:1.8;color:#8fb0c2;">
+      <div><strong style="color:#eaf6ff;">反方向的提醒</strong>：1,388 行的项目不需要上 ECS、不需要每个实体都做插件化。目录重排的收益远小于上面三条（数据化、去节点引用、拆敌人类型）——先做这三件，目录顺手就顺了。</div>
+      <div style="color:#5f7d90;margin-top:6px;">现状核对：scenes 6 个 .tscn、scripts 11 个 .gd 全部平铺；仓库内 0 个 .tres；game_state.gd 持有 player / bullets_root / enemies_root / pickups_root / fx_root / spawner / camera 引用。</div>
+    </div>
+
+  </div>
+</div>
+</html>

@@ -1,0 +1,186 @@
+<html style="margin:0;padding:0;">
+<meta charset="utf-8">
+<title>Neon Rust 目录结构设计稿</title>
+<div style="width:100%;box-sizing:border-box;background:#07090d;color:#dbe7ef;font-family:-apple-system,'PingFang SC','Helvetica Neue',sans-serif;padding:28px 22px 34px;">
+  <div style="max-width:1220px;margin:0 auto;">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 16px;">
+      <h1 style="margin:0;font-size:27px;letter-spacing:.5px;color:#eaf6ff;">目录结构设计稿</h1>
+      <span style="font-size:14px;color:#7f97a8;">neon-rust · v1 提案 · 只设计，不动代码</span>
+    </div>
+
+    <div style="margin:14px 0 22px;padding:12px 16px;border-left:3px solid #35d7ff;background:#0a141b;border-radius:0 8px 8px 0;font-size:14px;line-height:1.8;color:#cfe6f2;">
+      <strong style="color:#35d7ff;">设计前提</strong>：未来会加更多敌人类型、武器/弹种、拾取物、Boss 与多套波次、可能的第二张地图、暂停/设置/主菜单、音乐分组。目标是不动代码就能加内容，所以结构必须满足三点：<strong>按功能分目录、数据用资源、实体之间不互相找节点</strong>。
+    </div>
+
+    <h2 style="font-size:17px;margin:0 0 10px;color:#eaf6ff;font-weight:600;">1 · 依赖方向：只能向下</h2>
+    <div style="border:1px solid #17232f;border-radius:12px;background:#0a0e14;padding:10px 8px;">
+      <svg viewBox="0 0 1180 366" style="width:100%;height:auto;display:block;" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0 0 L10 5 L0 10 z" fill="#35d7ff"/>
+          </marker>
+        </defs>
+
+        <rect x="20" y="14" width="800" height="62" rx="8" fill="#0f1824" stroke="#35d7ff"/>
+        <text x="34" y="38" font-size="15" fill="#35d7ff">world/　关卡装配层</text>
+        <text x="34" y="60" font-size="13" fill="#8fb0c2">main.tscn · arena.tscn —— 只负责把 systems 与 entities 拼起来</text>
+
+        <rect x="20" y="90" width="800" height="62" rx="8" fill="#0f1824" stroke="#6dffa8"/>
+        <text x="34" y="114" font-size="15" fill="#6dffa8">systems/　场景级服务</text>
+        <text x="34" y="136" font-size="13" fill="#8fb0c2">waves/spawner · camera/ · fx 表现 —— 驱动实体，但不属于实体</text>
+
+        <rect x="20" y="166" width="800" height="62" rx="8" fill="#0f1824" stroke="#ffc857"/>
+        <text x="34" y="190" font-size="15" fill="#ffc857">entities/　可实例化实体</text>
+        <text x="34" y="212" font-size="13" fill="#8fb0c2">player · enemies · projectiles · pickups —— 场景 + 脚本 + 自身数据同目录</text>
+
+        <rect x="20" y="242" width="800" height="62" rx="8" fill="#0f1824" stroke="#ff3d9a"/>
+        <text x="34" y="266" font-size="15" fill="#ff3d9a">core/　全局层</text>
+        <text x="34" y="288" font-size="13" fill="#8fb0c2">autoload（Game / InputSetup / Fx）· resources（数据模板）· lib 纯函数</text>
+
+        <path d="M420 76 V88" stroke="#35d7ff" stroke-width="2" marker-end="url(#ar)"/>
+        <path d="M420 152 V164" stroke="#35d7ff" stroke-width="2" marker-end="url(#ar)"/>
+        <path d="M420 228 V240" stroke="#35d7ff" stroke-width="2" marker-end="url(#ar)"/>
+
+        <rect x="850" y="90" width="310" height="232" rx="8" fill="#0b1119" stroke="#1e3346"/>
+        <text x="864" y="114" font-size="14" fill="#eaf6ff">四条硬规矩</text>
+        <text x="864" y="140" font-size="13" fill="#8fb0c2">1. core 不引用上层：要上层就</text>
+        <text x="864" y="159" font-size="13" fill="#8fb0c2">　 用 group 或 Game 信号</text>
+        <text x="864" y="184" font-size="13" fill="#8fb0c2">2. 实体之间不 get_node 对方</text>
+        <text x="864" y="212" font-size="13" fill="#8fb0c2">3. 实体脚本不写死 res:// 场景路径，</text>
+        <text x="864" y="231" font-size="13" fill="#8fb0c2">　 用 @export PackedScene 注入</text>
+        <text x="864" y="256" font-size="13" fill="#8fb0c2">4. assets 只被引用，不含逻辑；</text>
+        <text x="864" y="275" font-size="13" fill="#8fb0c2">　 .tres 单向被读，不运行回写</text>
+        <text x="864" y="302" font-size="13" fill="#5f7d90">autoload 维持 3 个，且不持有节点引用</text>
+      </svg>
+    </div>
+
+    <h2 style="font-size:17px;margin:30px 0 10px;color:#eaf6ff;font-weight:600;">2 · 最终目录树</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:14px;">
+      <div style="flex:1 1 560px;min-width:360px;border:1px solid #16323a;border-radius:12px;background:#08100f;padding:14px 16px;">
+        <div style="font-family:ui-monospace,Menlo,monospace;font-size:13.3px;line-height:1.72;white-space:pre;overflow-x:auto;color:#b9c8d2;">
+neon-rust/
+├─ project.godot · export_presets.cfg · icon.svg · run.sh
+├─ addons/                <span style="color:#5ff0d0;">第三方插件，不手改</span>
+├─ assets/                <span style="color:#5ff0d0;">纯素材，无逻辑</span>
+│  ├─ sprites/{player,enemies,projectiles,pickups,fx,world}/
+│  ├─ audio/{sfx,music}/
+│  └─ shaders/
+├─ core/                  <span style="color:#ff9ec4;">全局层</span>
+│  ├─ autoload/  game_state.gd  input_setup.gd  fx.gd
+│  ├─ resources/ enemy_def.gd  pickup_def.gd
+│  │              wave_def.gd   drop_table.gd
+│  └─ lib/       纯函数工具（可选）
+├─ entities/              <span style="color:#ffc857;">实体：场景+脚本+数据同目录</span>
+│  ├─ player/      player.tscn  player.gd  player_stats.tres
+│  ├─ enemies/     enemy_base.tscn  enemy_base.gd
+│  │                chaser.tscn/gd + chaser_stats.tres
+│  │                brute.tscn/gd  + brute_stats.tres
+│  │                spitter.tscn/gd + spitter_stats.tres
+│  ├─ projectiles/ bullet.tscn  bullet.gd
+│  └─ pickups/     pickup.tscn  pickup.gd
+│                   health.tres  overdrive.tres
+├─ systems/               <span style="color:#6dffa8;">场景级服务</span>
+│  ├─ waves/   spawner.gd  waves_01.tres
+│  ├─ camera/  camera_rig.gd
+│  └─ fx/      fx_burst.tscn
+├─ ui/
+│  ├─ hud/     hud.tscn  hud.gd
+│  ├─ screens/ pause_menu.tscn  game_over.tscn
+│  ├─ theme/   neon_theme.tres
+│  └─ debug/   debug_overlay.tscn  debug_overlay.gd
+├─ world/      main.tscn  arena/arena.tscn
+├─ tests/      smoke_test  pause_test  capture
+├─ tools/      生成与打包脚本
+└─ docs/       截图与说明
+</div>
+      </div>
+
+      <div style="flex:1 1 380px;min-width:300px;border:1px solid #17232f;border-radius:12px;background:#0a0e14;padding:14px 16px;font-size:13.5px;line-height:1.85;color:#cfe0ec;">
+        <div style="font-size:15px;color:#eaf6ff;font-weight:600;margin-bottom:8px;">分工一句话</div>
+        <div><span style="color:#35d7ff;">world/</span> 只有“拼装”：主场景与地图，不放玩法逻辑</div>
+        <div><span style="color:#6dffa8;">systems/</span> 全场范围的服务：波次、相机、爆发特效</div>
+        <div><span style="color:#ffc857;">entities/</span> 可被实例化的东西：玩家、敌人、子弹、拾取物</div>
+        <div><span style="color:#ff9ec4;">core/</span> 全局状态与数据模板，不含具体内容</div>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid #1c2a35;color:#8fb0c2;">
+          命名：文件 <span style="color:#eaf6ff;">snake_case</span>；节点 <span style="color:#eaf6ff;">PascalCase</span>；场景与脚本同名同目录；数值资源用 <span style="color:#eaf6ff;">_stats.tres</span>。
+        </div>
+      </div>
+    </div>
+
+    <h2 style="font-size:17px;margin:30px 0 10px;color:#eaf6ff;font-weight:600;">3 · 现有 11 个脚本 / 6 个场景怎么落位</h2>
+    <div style="overflow-x:auto;border:1px solid #17232f;border-radius:12px;background:#0a0e14;">
+      <table style="width:100%;border-collapse:collapse;font-size:14px;min-width:780px;">
+        <thead>
+          <tr style="background:#101821;color:#9fb3c2;text-align:left;">
+            <th style="padding:10px 14px;font-weight:600;">现在</th>
+            <th style="padding:10px 14px;font-weight:600;">目标</th>
+            <th style="padding:10px 14px;font-weight:600;">动作</th>
+          </tr>
+        </thead>
+        <tbody style="color:#cfe0ec;">
+          <tr style="border-top:1px solid #161f29;"><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;color:#ffc857;">game_state.gd</td><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;">core/autoload/game_state.gd</td><td style="padding:9px 14px;">移动；P5 去掉节点引用</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;color:#ffc857;">input_setup.gd</td><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;">core/autoload/input_setup.gd</td><td style="padding:9px 14px;">移动 + 改 project.godot autoload 路径</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;color:#ffc857;">fx.gd</td><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;">core/autoload/fx.gd + systems/fx/</td><td style="padding:9px 14px;">脚本留在 autoload，弹出场景归 systems</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;color:#ffc857;">player.gd / player.tscn</td><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;">entities/player/</td><td style="padding:9px 14px;">移动；数值抽 player_stats.tres</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;color:#ffc857;">enemy.gd / enemy.tscn</td><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;">entities/enemies/</td><td style="padding:9px 14px;">P4 拆 base + 三种类型 + 各自 tres</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;color:#ffc857;">bullet.gd / bullet.tscn</td><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;">entities/projectiles/</td><td style="padding:9px 14px;">移动；敌我仍共用一套 setup()</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;color:#ffc857;">pickup.gd / pickup.tscn</td><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;">entities/pickups/</td><td style="padding:9px 14px;">移动；两种掉落抽成 health/overdrive.tres</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;color:#ffc857;">spawner.gd</td><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;">systems/waves/</td><td style="padding:9px 14px;">移动；波次表抽 waves_01.tres</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;color:#ffc857;">camera_rig.gd</td><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;">systems/camera/</td><td style="padding:9px 14px;">移动</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;color:#ffc857;">hud.gd / hud.tscn</td><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;">ui/hud/ + ui/screens/</td><td style="padding:9px 14px;">移动；Pause/GameOver 拆成独立场景</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;color:#ffc857;">main.gd / main.tscn</td><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;">world/main.tscn + main.gd</td><td style="padding:9px 14px;">移动；Floor 拆 world/arena/arena.tscn</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;color:#9fb3c2;">assets/sprites/* · sounds/*</td><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;">assets/sprites/&lt;域&gt;/ · audio/sfx/</td><td style="padding:9px 14px;">按域归组，路径全量重写（机械活）</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;color:#9fb3c2;">tests/ tools/ docs/ shaders/</td><td style="padding:9px 14px;font-family:ui-monospace,Menlo,monospace;">tests/ tools/ docs/　shaders→assets/</td><td style="padding:9px 14px;">前三个原地；shaders 并进 assets</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 style="font-size:17px;margin:30px 0 10px;color:#eaf6ff;font-weight:600;">4 · 分五步迁，每步都有验收门</h2>
+    <div style="overflow-x:auto;border:1px solid #17232f;border-radius:12px;background:#0a0e14;">
+      <table style="width:100%;border-collapse:collapse;font-size:14px;min-width:780px;">
+        <thead>
+          <tr style="background:#101821;color:#9fb3c2;text-align:left;">
+            <th style="padding:10px 14px;font-weight:600;">阶段</th>
+            <th style="padding:10px 14px;font-weight:600;">内容</th>
+            <th style="padding:10px 14px;font-weight:600;">验收门</th>
+          </tr>
+        </thead>
+        <tbody style="color:#cfe0ec;">
+          <tr style="border-top:1px solid #161f29;"><td style="padding:10px 14px;color:#5ff0d0;">P1 搬迁</td><td style="padding:10px 14px;">只挪目录，不改任何逻辑：11 处脚本引用、17 处场景引用、3 个 autoload 路径全部重写</td><td style="padding:10px 14px;">import + smoke PASS + pause PASS</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:10px 14px;color:#5ff0d0;">P2 资产归组</td><td style="padding:10px 14px;">sprites 按域分、sounds→audio/sfx，重写贴图与音频路径</td><td style="padding:10px 14px;">capture 截图与迁移前逐张比对，无变化</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:10px 14px;color:#5ff0d0;">P3 场景拆分</td><td style="padding:10px 14px;">arena.tscn 独立、pause_menu/game_over 从 hud 拆出</td><td style="padding:10px 14px;">截图比对 + 手测暂停/死亡界面</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:10px 14px;color:#5ff0d0;">P4 数据化</td><td style="padding:10px 14px;">EnemyDef/PickupDef/WaveDef 三个 Resource，敌人三型拆场景继承 base，spawner 读表</td><td style="padding:10px 14px;">波次敌人数与数值与旧版一致（脚本核对）</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:10px 14px;color:#5ff0d0;">P5 解耦</td><td style="padding:10px 14px;">Game 去节点引用，玩家/敌人 root 进 group；main 改用 group 查找</td><td style="padding:10px 14px;">两套测试 PASS + 重出 Deck 包真机回归</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 style="font-size:17px;margin:30px 0 10px;color:#eaf6ff;font-weight:600;">5 · 风险与刻意不做的事</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:14px;">
+      <div style="flex:1 1 460px;min-width:320px;border:1px solid #2a2027;border-radius:12px;background:#0c0a0c;padding:14px 16px;font-size:13.5px;line-height:1.85;color:#e3cdd6;">
+        <div style="font-size:15px;color:#ff9ec4;font-weight:600;margin-bottom:6px;">迁移风险</div>
+        <div>· <span style="color:#ffc857;">.uid 必须随 .gd 一起搬</span>，否则脚本引用断</div>
+        <div>· .tscn 里的 ext_resource 是路径引用（不是 uid），shell mv 后必须重写</div>
+        <div>· project.godot 的 3 个 autoload 路径要同步改</div>
+        <div>· SAVE_PATH = user://neon_rust.cfg 不变，最高分不会丢</div>
+        <div>· 输入 action 名不变，Deck 手感不受影响</div>
+        <div>· exclude_filter 仍排除 docs/tools/tests，打包体积不变</div>
+      </div>
+      <div style="flex:1 1 460px;min-width:320px;border:1px solid #16323a;border-radius:12px;background:#08100f;padding:14px 16px;font-size:13.5px;line-height:1.85;color:#b9d8d2;">
+        <div style="font-size:15px;color:#5ff0d0;font-weight:600;margin-bottom:6px;">刻意不做</div>
+        <div>· 不新增 Events autoload —— 现有 7 个 Game 信号够用，多一个总线只是换个名字</div>
+        <div>· 不给每种敌人单开目录 —— 3 个文件不值得再套一层</div>
+        <div>· 不上 ECS / 不把 core 拆成一堆 autoload</div>
+        <div>· 不在 P1 阶段动任何玩法代码，先证明“搬迁无副作用”</div>
+        <div style="color:#5f7d90;margin-top:8px;">如果只想改善体验、不想大动：做完 P1+P2 就够，P3 之后属于“加内容前的前置投资”。</div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;font-size:13px;color:#5f7d90;line-height:1.8;">
+      核对数据：引用面 = 11 处 <code style="color:#8fb0c2;">res://scripts/*.gd</code> + 17 处 <code style="color:#8fb0c2;">res://scenes/*.tscn</code> + 3 个 autoload 路径；当前 0 个 .tres、12 个目录。设计稿不动代码，等你确认再开工。
+    </div>
+
+  </div>
+</div>
+</html>

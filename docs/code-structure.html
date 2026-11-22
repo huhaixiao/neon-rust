@@ -1,0 +1,309 @@
+<html style="margin:0;padding:0;">
+<meta charset="utf-8">
+<title>Neon Rust 代码结构</title>
+<div style="width:100%;box-sizing:border-box;background:#07090d;color:#dbe7ef;font-family:-apple-system,'PingFang SC','Helvetica Neue',sans-serif;padding:28px 22px 34px;">
+
+  <div style="max-width:1220px;margin:0 auto;">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 16px;">
+      <h1 style="margin:0;font-size:28px;letter-spacing:.5px;color:#eaf6ff;">Neon Rust 代码结构</h1>
+      <span style="font-size:14px;color:#7f97a8;">Godot 4.7.2 · 2D 俯视角双摇杆 · 1600×1000 场地</span>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 26px;">
+      <span style="font-size:14px;padding:6px 12px;border:1px solid #234; border-radius:999px;background:#0d131b;color:#35d7ff;">3 个 autoload</span>
+      <span style="font-size:14px;padding:6px 12px;border:1px solid #234;border-radius:999px;background:#0d131b;color:#6dffa8;">6 个场景</span>
+      <span style="font-size:14px;padding:6px 12px;border:1px solid #234;border-radius:999px;background:#0d131b;color:#ffc857;">11 个 .gd / 1,388 行</span>
+      <span style="font-size:14px;padding:6px 12px;border:1px solid #234;border-radius:999px;background:#0d131b;color:#ff3d9a;">资源全部脚本生成</span>
+      <span style="font-size:14px;padding:6px 12px;border:1px solid #234;border-radius:999px;background:#0d131b;color:#9fb3c2;">零外部依赖</span>
+    </div>
+
+    <h2 style="font-size:17px;margin:0 0 10px;color:#eaf6ff;font-weight:600;">1 · 场景树：一个 Main 挂 10 个子节点，3 组职责</h2>
+    <div style="border:1px solid #17232f;border-radius:12px;background:#0a0e14;padding:10px 8px;">
+      <svg viewBox="0 0 1180 566" style="width:100%;height:auto;display:block;" xmlns="http://www.w3.org/2000/svg">
+        <rect x="400" y="12" width="380" height="56" rx="8" fill="#12202c" stroke="#35d7ff" stroke-width="1.5"/>
+        <text x="590" y="36" text-anchor="middle" font-size="16" fill="#eaf6ff">Main : Node2D — main.gd</text>
+        <text x="590" y="56" text-anchor="middle" font-size="13" fill="#8fb0c2">关卡装配 / 输入 / 暂停 / 重开 / 全屏</text>
+
+        <path d="M590 68 V86 H190 V104 M590 86 H565 V104 M590 86 H960 V104" stroke="#2b4a5f" stroke-width="1.5" fill="none"/>
+        <rect x="20" y="104" width="360" height="440" rx="10" fill="#0b1119" stroke="#1e3346"/>
+        <rect x="400" y="104" width="340" height="440" rx="10" fill="#0b1119" stroke="#1e3346"/>
+        <rect x="760" y="104" width="400" height="440" rx="10" fill="#0b1119" stroke="#1e3346"/>
+        <text x="36" y="128" font-size="15" fill="#35d7ff">玩法实体（各 root 只做容器）</text>
+        <text x="416" y="128" font-size="15" fill="#ffc857">表现层</text>
+        <text x="776" y="128" font-size="15" fill="#ff3d9a">UI 层（CanvasLayer）</text>
+
+        <!-- gameplay -->
+        <rect x="32" y="140" width="336" height="70" rx="7" fill="#0f1824" stroke="#1e3346"/>
+        <text x="46" y="164" font-size="15" fill="#eaf6ff">Player</text>
+        <text x="46" y="184" font-size="13" fill="#8fb0c2">player.tscn → player.gd</text>
+        <text x="46" y="201" font-size="13" fill="#5f7d90">移动 · 瞄准 · 连发 · 冲刺 i-frame</text>
+
+        <rect x="32" y="219" width="336" height="70" rx="7" fill="#0f1824" stroke="#1e3346"/>
+        <text x="46" y="243" font-size="15" fill="#eaf6ff">Enemies</text>
+        <text x="46" y="263" font-size="13" fill="#8fb0c2">enemy.tscn* → enemy.gd</text>
+        <text x="46" y="280" font-size="13" fill="#5f7d90">CHASER / BRUTE / SPITTER</text>
+
+        <rect x="32" y="298" width="336" height="70" rx="7" fill="#0f1824" stroke="#1e3346"/>
+        <text x="46" y="322" font-size="15" fill="#eaf6ff">Bullets</text>
+        <text x="46" y="342" font-size="13" fill="#8fb0c2">bullet.tscn* → bullet.gd</text>
+        <text x="46" y="359" font-size="13" fill="#5f7d90">敌我共用弹体，layer/mask 由 setup() 定</text>
+
+        <rect x="32" y="377" width="336" height="70" rx="7" fill="#0f1824" stroke="#1e3346"/>
+        <text x="46" y="401" font-size="15" fill="#eaf6ff">Pickups</text>
+        <text x="46" y="421" font-size="13" fill="#8fb0c2">pickup.tscn* → pickup.gd</text>
+        <text x="46" y="438" font-size="13" fill="#5f7d90">血包 +30 / 超载 9s（伤害×0.72）</text>
+
+        <rect x="32" y="456" width="336" height="70" rx="7" fill="#0f1824" stroke="#1e3346"/>
+        <text x="46" y="480" font-size="15" fill="#eaf6ff">Spawner : Node2D</text>
+        <text x="46" y="500" font-size="13" fill="#8fb0c2">spawner.gd（WaveDirector）</text>
+        <text x="46" y="517" font-size="13" fill="#5f7d90">波次预算 · 边缘涌入 · 清波奖励</text>
+
+        <!-- presentation -->
+        <rect x="412" y="140" width="316" height="70" rx="7" fill="#0f1824" stroke="#1e3346"/>
+        <text x="426" y="164" font-size="15" fill="#eaf6ff">Floor : Sprite2D</text>
+        <text x="426" y="184" font-size="13" fill="#8fb0c2">arena_floor.png 1600×1000</text>
+        <text x="426" y="201" font-size="13" fill="#5f7d90">centered=false，静态底图</text>
+
+        <rect x="412" y="219" width="316" height="70" rx="7" fill="#0f1824" stroke="#1e3346"/>
+        <text x="426" y="243" font-size="15" fill="#eaf6ff">FX : Node2D</text>
+        <text x="426" y="263" font-size="13" fill="#8fb0c2">Game.fx_root（Fx 的落点）</text>
+        <text x="426" y="280" font-size="13" fill="#5f7d90">粒子 / 闪光 / 残影 / 音效池</text>
+
+        <rect x="412" y="298" width="316" height="70" rx="7" fill="#0f1824" stroke="#1e3346"/>
+        <text x="426" y="322" font-size="15" fill="#eaf6ff">Camera2D</text>
+        <text x="426" y="342" font-size="13" fill="#8fb0c2">camera_rig.gd</text>
+        <text x="426" y="359" font-size="13" fill="#5f7d90">跟随 + trauma 震屏 + 手动 clamp</text>
+
+        <rect x="412" y="377" width="316" height="70" rx="7" fill="#0f1824" stroke="#1e3346"/>
+        <text x="426" y="401" font-size="15" fill="#eaf6ff">Crosshair : Sprite2D</text>
+        <text x="426" y="421" font-size="13" fill="#8fb0c2">z_index=20</text>
+        <text x="426" y="438" font-size="13" fill="#5f7d90">跟鼠标；接手柄时隐藏</text>
+
+        <rect x="412" y="456" width="316" height="70" rx="7" fill="#0b1119" stroke="none"/>
+        <text x="426" y="480" font-size="13" fill="#5f7d90">注意：场景内已无 WorldEnvironment —</text>
+        <text x="426" y="499" font-size="13" fill="#5f7d90">BG_CANVAS + glow 会把 2D 画布清黑</text>
+
+        <!-- ui -->
+        <rect x="772" y="140" width="376" height="86" rx="7" fill="#0f1824" stroke="#1e3346"/>
+        <text x="786" y="164" font-size="15" fill="#eaf6ff">UI — hud.tscn → hud.gd</text>
+        <text x="786" y="184" font-size="13" fill="#8fb0c2">HULL 条 / WAVE / SCORE / BEST</text>
+        <text x="786" y="203" font-size="13" fill="#5f7d90">蹲在 CanvasLayer，独立于世界坐标</text>
+
+        <rect x="772" y="236" width="376" height="128" rx="7" fill="#0f1824" stroke="#1e3346"/>
+        <text x="786" y="260" font-size="15" fill="#eaf6ff">覆盖层子节点</text>
+        <text x="786" y="282" font-size="13" fill="#8fb0c2">PauseLayer → PAUSED</text>
+        <text x="786" y="301" font-size="13" fill="#8fb0c2">GameOver → PRESS A TO REDEPLOY</text>
+        <text x="786" y="320" font-size="13" fill="#8fb0c2">ControlHint（设备感知文案）</text>
+        <text x="786" y="339" font-size="13" fill="#8fb0c2">DebugLabel（仅 debug 构建）</text>
+        <text x="786" y="356" font-size="13" fill="#5f7d90">F3 / R3 切换：FPS·敌人·子弹·坐标</text>
+
+        <rect x="772" y="374" width="376" height="70" rx="7" fill="#0f1824" stroke="#1e3346"/>
+        <text x="786" y="398" font-size="15" fill="#eaf6ff">process_mode = ALWAYS</text>
+        <text x="786" y="418" font-size="13" fill="#8fb0c2">暂停/死亡时覆盖层照常渲染</text>
+        <text x="786" y="436" font-size="13" fill="#5f7d90">玩法子树由 main 显式设回 PAUSABLE</text>
+
+        <rect x="772" y="454" width="376" height="72" rx="7" fill="#0f1824" stroke="#1e3346"/>
+        <text x="786" y="478" font-size="15" fill="#eaf6ff">文案随手柄切换</text>
+        <text x="786" y="498" font-size="13" fill="#8fb0c2">手柄：RT FIRE · B DASH · START PAUSE</text>
+        <text x="786" y="516" font-size="13" fill="#5f7d90">joy_connection_changed 即时刷新</text>
+
+        <text x="20" y="560" font-size="12" fill="#4d6476">示意结构：节点与脚本取自 scenes/main.tscn；* 为运行时按需 instance 的预制体</text>
+      </svg>
+    </div>
+
+    <h2 style="font-size:17px;margin:30px 0 10px;color:#eaf6ff;font-weight:600;">2 · 三层协作：autoload 存全局，场景树存实体，信号连两边</h2>
+    <div style="border:1px solid #17232f;border-radius:12px;background:#0a0e14;padding:10px 8px;">
+      <svg viewBox="0 0 1180 556" style="width:100%;height:auto;display:block;" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0 0 L10 5 L0 10 z" fill="#35d7ff"/>
+          </marker>
+          <marker id="ahm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0 0 L10 5 L0 10 z" fill="#ff3d9a"/>
+          </marker>
+        </defs>
+
+        <rect x="20" y="18" width="340" height="126" rx="9" fill="#0d1a22" stroke="#35d7ff"/>
+        <text x="34" y="44" font-size="15" fill="#35d7ff">InputSetup（autoload）</text>
+        <text x="34" y="68" font-size="13" fill="#cfe0ec">运行时写 InputMap，不写 project.godot</text>
+        <text x="34" y="89" font-size="13" fill="#8fb0c2">move / fire / dash / pause</text>
+        <text x="34" y="108" font-size="13" fill="#8fb0c2">restart / mute / fullscreen / debug</text>
+        <text x="34" y="129" font-size="13" fill="#5f7d90">键盘 + 鼠标 + 手柄三套并存，deadzone 0.15</text>
+
+        <rect x="20" y="160" width="340" height="196" rx="9" fill="#0d1a22" stroke="#6dffa8"/>
+        <text x="34" y="186" font-size="15" fill="#6dffa8">Game（autoload）</text>
+        <text x="34" y="210" font-size="13" fill="#cfe0ec">全局唯一状态：score / wave / health / running</text>
+        <text x="34" y="231" font-size="13" fill="#8fb0c2">信号 score_changed / wave_changed</text>
+        <text x="34" y="250" font-size="13" fill="#8fb0c2">health_changed / overdrive_changed</text>
+        <text x="34" y="269" font-size="13" fill="#8fb0c2">wave_cleared / run_started / run_ended</text>
+        <text x="34" y="292" font-size="13" fill="#5f7d90">挂载点引用：player / bullets_root /</text>
+        <text x="34" y="311" font-size="13" fill="#5f7d90">enemies_root / pickups_root / fx_root / spawner</text>
+        <text x="34" y="337" font-size="13" fill="#ffc857">最高分存档 user://neon_rust.cfg</text>
+
+        <rect x="20" y="372" width="340" height="126" rx="9" fill="#0d1a22" stroke="#ffc857"/>
+        <text x="34" y="398" font-size="15" fill="#ffc857">Fx（autoload）</text>
+        <text x="34" y="422" font-size="13" fill="#cfe0ec">粒子 / 闪白 / 冲刺残影 / 音效池</text>
+        <text x="34" y="443" font-size="13" fill="#8fb0c2">全部 spawn 到 Game.fx_root</text>
+        <text x="34" y="466" font-size="13" fill="#5f7d90">谁都能调，但生命周期归场景</text>
+        <text x="34" y="487" font-size="13" fill="#5f7d90">暂停瞬间已发声的尾音会自然播完</text>
+
+        <!-- row 1 -->
+        <text x="400" y="20" font-size="13" fill="#5f7d90">一帧的主链路（按住扳机时 0.085s 一发）</text>
+        <rect x="400" y="30" width="160" height="66" rx="7" fill="#0f1824" stroke="#1e3346"/>
+        <text x="414" y="55" font-size="15" fill="#eaf6ff">输入事件</text>
+        <text x="414" y="76" font-size="13" fill="#8fb0c2">action fire / dash</text>
+        <text x="414" y="92" font-size="13" fill="#5f7d90">轴值 → 方向向量</text>
+
+        <rect x="585" y="30" width="160" height="66" rx="7" fill="#0f1824" stroke="#1e3346"/>
+        <text x="599" y="55" font-size="15" fill="#eaf6ff">Player</text>
+        <text x="599" y="76" font-size="13" fill="#8fb0c2">player.gd</text>
+        <text x="599" y="92" font-size="13" fill="#5f7d90">位移 / 瞄准 / 生成子弹</text>
+
+        <rect x="770" y="30" width="160" height="66" rx="7" fill="#0f1824" stroke="#1e3346"/>
+        <text x="784" y="55" font-size="15" fill="#eaf6ff">Bullet</text>
+        <text x="784" y="76" font-size="13" fill="#8fb0c2">bullet.gd</text>
+        <text x="784" y="92" font-size="13" fill="#5f7d90">layer4→mask2</text>
+
+        <rect x="955" y="30" width="160" height="66" rx="7" fill="#0f1824" stroke="#1e3346"/>
+        <text x="969" y="55" font-size="15" fill="#eaf6ff">Enemy</text>
+        <text x="969" y="76" font-size="13" fill="#8fb0c2">enemy.gd</text>
+        <text x="969" y="92" font-size="13" fill="#5f7d90">扣血 → 死亡 → 掉落</text>
+
+        <path d="M560 63 H578" stroke="#35d7ff" stroke-width="2" marker-end="url(#ah)"/>
+        <path d="M745 63 H762" stroke="#35d7ff" stroke-width="2" marker-end="url(#ah)"/>
+        <path d="M930 63 H947" stroke="#35d7ff" stroke-width="2" marker-end="url(#ah)"/>
+
+        <!-- row 2 -->
+        <text x="400" y="140" font-size="13" fill="#5f7d90">波次与掉落（与主链路并行）</text>
+        <rect x="400" y="150" width="200" height="72" rx="7" fill="#0f1824" stroke="#1e3346"/>
+        <text x="414" y="174" font-size="15" fill="#eaf6ff">Spawner</text>
+        <text x="414" y="194" font-size="13" fill="#8fb0c2">spawner.gd · 波次预算</text>
+        <text x="414" y="212" font-size="13" fill="#5f7d90">total=min(6+2(w-1),44)</text>
+
+        <rect x="625" y="150" width="200" height="72" rx="7" fill="#0f1824" stroke="#1e3346"/>
+        <text x="639" y="174" font-size="15" fill="#eaf6ff">Enemies root</text>
+        <text x="639" y="194" font-size="13" fill="#8fb0c2">实例 + hp_ramp / speed_ramp</text>
+        <text x="639" y="212" font-size="13" fill="#5f7d90">清空后 _intermission 2.8s</text>
+
+        <rect x="850" y="150" width="265" height="72" rx="7" fill="#0f1824" stroke="#1e3346"/>
+        <text x="864" y="174" font-size="15" fill="#eaf6ff">Pickup / Fx</text>
+        <text x="864" y="194" font-size="13" fill="#8fb0c2">6% 血包 · 9% 超载（9s）</text>
+        <text x="864" y="212" font-size="13" fill="#5f7d90">拾取 mask=1，只认玩家</text>
+
+        <path d="M600 186 H617" stroke="#35d7ff" stroke-width="2" marker-end="url(#ah)"/>
+        <path d="M825 186 H842" stroke="#ff3d9a" stroke-width="2" marker-end="url(#ahm)"/>
+
+        <!-- row 3 -->
+        <text x="400" y="262" font-size="13" fill="#5f7d90">状态 → 界面：HUD 不轮询，只吃信号</text>
+        <rect x="400" y="272" width="200" height="80" rx="7" fill="#0f1824" stroke="#6dffa8"/>
+        <text x="414" y="296" font-size="15" fill="#6dffa8">Game 信号</text>
+        <text x="414" y="316" font-size="13" fill="#8fb0c2">7 个 signal</text>
+        <text x="414" y="336" font-size="13" fill="#5f7d90">状态唯一来源</text>
+
+        <rect x="625" y="272" width="200" height="80" rx="7" fill="#0f1824" stroke="#6dffa8"/>
+        <text x="639" y="296" font-size="15" fill="#eaf6ff">HUD</text>
+        <text x="639" y="316" font-size="13" fill="#8fb0c2">hud.gd · CanvasLayer</text>
+        <text x="639" y="336" font-size="13" fill="#5f7d90">订阅即刷新</text>
+
+        <rect x="850" y="272" width="265" height="80" rx="7" fill="#0f1824" stroke="#1e3346"/>
+        <text x="864" y="296" font-size="15" fill="#eaf6ff">main.gd 装配</text>
+        <text x="864" y="316" font-size="13" fill="#8fb0c2">_ready 注入 Game.player / 各 root</text>
+        <text x="864" y="336" font-size="13" fill="#5f7d90">reset_run() 开局 · R / A 重开</text>
+
+        <path d="M600 312 H617" stroke="#6dffa8" stroke-width="2" marker-end="url(#ah)"/>
+
+        <!-- row 4 -->
+        <text x="400" y="392" font-size="13" fill="#5f7d90">镜头与准星</text>
+        <rect x="400" y="402" width="200" height="76" rx="7" fill="#0f1824" stroke="#1e3346"/>
+        <text x="414" y="426" font-size="15" fill="#eaf6ff">Camera2D</text>
+        <text x="414" y="446" font-size="13" fill="#8fb0c2">camera_rig.gd</text>
+        <text x="414" y="464" font-size="13" fill="#5f7d90">limit_* + 手动 clamp 防露白</text>
+
+        <rect x="625" y="402" width="200" height="76" rx="7" fill="#0f1824" stroke="#1e3346"/>
+        <text x="639" y="426" font-size="15" fill="#eaf6ff">Crosshair</text>
+        <text x="639" y="446" font-size="13" fill="#8fb0c2">跟鼠标，z_index=20</text>
+        <text x="639" y="464" font-size="13" fill="#5f7d90">有手柄时直接隐藏</text>
+
+        <path d="M560 440 H617" stroke="#35d7ff" stroke-width="2" marker-end="url(#ah)"/>
+
+        <text x="20" y="512" font-size="13" fill="#5f7d90">进程模型：main + HUD = PROCESS_MODE_ALWAYS；玩法 7 个节点由 _freeze_gameplay_while_paused() 逐个设回 PAUSABLE。</text>
+        <text x="20" y="533" font-size="13" fill="#5f7d90">暂停后世界彻底静止、覆盖层仍响应。这是修过的坑：PROCESS_MODE_INHERIT 会沿父节点继承，main 设 ALWAYS 会把整棵玩法子树带走。</text>
+      </svg>
+    </div>
+
+    <h2 style="font-size:17px;margin:30px 0 10px;color:#eaf6ff;font-weight:600;">3 · 11 个脚本各管什么</h2>
+    <div style="overflow-x:auto;border:1px solid #17232f;border-radius:12px;background:#0a0e14;">
+      <table style="width:100%;border-collapse:collapse;font-size:14px;min-width:720px;">
+        <thead>
+          <tr style="background:#101821;color:#9fb3c2;text-align:left;">
+            <th style="padding:10px 14px;font-weight:600;">脚本</th>
+            <th style="padding:10px 14px;font-weight:600;">行</th>
+            <th style="padding:10px 14px;font-weight:600;">职责</th>
+          </tr>
+        </thead>
+        <tbody style="color:#cfe0ec;">
+          <tr style="border-top:1px solid #161f29;"><td style="padding:9px 14px;color:#35d7ff;font-family:ui-monospace,Menlo,monospace;">game_state.gd</td><td style="padding:9px 14px;text-align:right;">95</td><td style="padding:9px 14px;">全局状态 + 7 个信号 + 最高分存档</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:9px 14px;color:#35d7ff;font-family:ui-monospace,Menlo,monospace;">input_setup.gd</td><td style="padding:9px 14px;text-align:right;">48</td><td style="padding:9px 14px;">运行时注册 InputMap（键鼠 + 手柄并存）</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:9px 14px;color:#ffc857;font-family:ui-monospace,Menlo,monospace;">fx.gd</td><td style="padding:9px 14px;text-align:right;">156</td><td style="padding:9px 14px;">粒子 / 闪光 / 残影 / 音效池</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:9px 14px;color:#eaf6ff;font-family:ui-monospace,Menlo,monospace;">player.gd</td><td style="padding:9px 14px;text-align:right;">237</td><td style="padding:9px 14px;">双摇杆移动、右摇杆优先、三连发、冲刺无敌帧、超载</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:9px 14px;color:#eaf6ff;font-family:ui-monospace,Menlo,monospace;">enemy.gd</td><td style="padding:9px 14px;text-align:right;">203</td><td style="padding:9px 14px;">三种敌人 AI + 受击闪白 + 死亡掉落</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:9px 14px;color:#eaf6ff;font-family:ui-monospace,Menlo,monospace;">bullet.gd</td><td style="padding:9px 14px;text-align:right;">73</td><td style="padding:9px 14px;">敌我共用弹体，setup() 决定阵营与碰撞层</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:9px 14px;color:#eaf6ff;font-family:ui-monospace,Menlo,monospace;">pickup.gd</td><td style="padding:9px 14px;text-align:right;">64</td><td style="padding:9px 14px;">漂浮掉落物：血包 / 超载</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:9px 14px;color:#eaf6ff;font-family:ui-monospace,Menlo,monospace;">spawner.gd</td><td style="padding:9px 14px;text-align:right;">145</td><td style="padding:9px 14px;">波次预算、边缘涌入、清波奖励、难度 ramp</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:9px 14px;color:#ffc857;font-family:ui-monospace,Menlo,monospace;">camera_rig.gd</td><td style="padding:9px 14px;text-align:right;">36</td><td style="padding:9px 14px;">跟随 + 衰减式 trauma 震屏</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:9px 14px;color:#ff3d9a;font-family:ui-monospace,Menlo,monospace;">hud.gd</td><td style="padding:9px 14px;text-align:right;">202</td><td style="padding:9px 14px;">HULL/WAVE/SCORE、暂停与死亡界面、设备感知文案、调试浮层</td></tr>
+          <tr style="border-top:1px solid #161f29;"><td style="padding:9px 14px;color:#eaf6ff;font-family:ui-monospace,Menlo,monospace;">main.gd</td><td style="padding:9px 14px;text-align:right;">129</td><td style="padding:9px 14px;">关卡装配、暂停/重开/全屏、手柄事件日志、暂停冻结</td></tr>
+          <tr style="border-top:1px solid #22303d;background:#0d141c;"><td style="padding:10px 14px;color:#6dffa8;">合计</td><td style="padding:10px 14px;text-align:right;color:#6dffa8;">1,388</td><td style="padding:10px 14px;color:#8fb0c2;">玩法集中在 player / enemy，表现集中在 fx / hud</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 style="font-size:17px;margin:30px 0 10px;color:#eaf6ff;font-weight:600;">4 · 目录分工</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;">
+
+      <div style="border:1px solid #17232f;border-radius:10px;background:#0a0e14;padding:14px 16px;">
+        <div style="font-size:15px;color:#35d7ff;font-family:ui-monospace,Menlo,monospace;">scenes/ · 6 个</div>
+        <div style="font-size:13px;color:#8fb0c2;line-height:1.7;margin-top:6px;">main.tscn 是唯一主场景，其余 player / enemy / bullet / pickup / hud 都是可复用预制体。</div>
+      </div>
+
+      <div style="border:1px solid #17232f;border-radius:10px;background:#0a0e14;padding:14px 16px;">
+        <div style="font-size:15px;color:#6dffa8;font-family:ui-monospace,Menlo,monospace;">scripts/ · 11 个</div>
+        <div style="font-size:13px;color:#8fb0c2;line-height:1.7;margin-top:6px;">一个脚本一类职责，没有跨脚本直接调用对方私有方法，全部经 Game 或信号。</div>
+      </div>
+
+      <div style="border:1px solid #17232f;border-radius:10px;background:#0a0e14;padding:14px 16px;">
+        <div style="font-size:15px;color:#ffc857;font-family:ui-monospace,Menlo,monospace;">assets/ · 13 png + 8 wav</div>
+        <div style="font-size:13px;color:#8fb0c2;line-height:1.7;margin-top:6px;">全部由 tools/generate_assets.py 与 generate_sounds.py 用标准库生成，可随时重烘焙。</div>
+      </div>
+
+      <div style="border:1px solid #17232f;border-radius:10px;background:#0a0e14;padding:14px 16px;">
+        <div style="font-size:15px;color:#ff3d9a;font-family:ui-monospace,Menlo,monospace;">tests/ · 3 个</div>
+        <div style="font-size:13px;color:#8fb0c2;line-height:1.7;margin-top:6px;">smoke_test 验开局与射击，pause_test 验暂停后位移为 0，capture 出验收截图。</div>
+      </div>
+
+      <div style="border:1px solid #17232f;border-radius:10px;background:#0a0e14;padding:14px 16px;">
+        <div style="font-size:15px;color:#9fb3c2;font-family:ui-monospace,Menlo,monospace;">tools/ · 导出与生成</div>
+        <div style="font-size:13px;color:#8fb0c2;line-height:1.7;margin-top:6px;">package_deck.sh / package_deck_debug.sh 出 zip，install-on-deck.sh 装 .desktop。</div>
+      </div>
+
+      <div style="border:1px solid #17232f;border-radius:10px;background:#0a0e14;padding:14px 16px;">
+        <div style="font-size:15px;color:#9fb3c2;font-family:ui-monospace,Menlo,monospace;">docs/ · 说明</div>
+        <div style="font-size:13px;color:#8fb0c2;line-height:1.7;margin-top:6px;">screenshots/ 是验收图；本页是从 main.tscn 与脚本头注释生成的代码结构。</div>
+      </div>
+    </div>
+
+    <h2 style="font-size:17px;margin:30px 0 10px;color:#eaf6ff;font-weight:600;">5 · 要改代码，从这三处进</h2>
+    <div style="border:1px solid #17232f;border-radius:12px;background:#0a0e14;padding:16px 18px;font-size:14px;line-height:1.9;color:#cfe0ec;">
+      <div><span style="color:#6dffa8;">手感/数值</span> → <code style="color:#eaf6ff;">scripts/player.gd</code> 顶部的 @export：move_speed 430、dash_speed 1500、fire_interval 0.085、bullet_damage 18。</div>
+      <div><span style="color:#6dffa8;">敌人/波次</span> → <code style="color:#eaf6ff;">scripts/enemy.gd</code> 的三种类型分支，配合 <code style="color:#eaf6ff;">scripts/spawner.gd</code> 的波次预算与 hp_ramp。</div>
+      <div><span style="color:#6dffa8;">键位/文案</span> → <code style="color:#eaf6ff;">scripts/input_setup.gd</code> 注册 action，<code style="color:#eaf6ff;">scripts/hud.gd::_refresh_input_copy()</code> 决定手柄态还是键鼠态文案。</div>
+    </div>
+
+    <div style="margin-top:22px;font-size:13px;color:#4d6476;line-height:1.7;">
+      数据来源：neon-rust 仓库 scenes/main.tscn、scripts/*.gd（HEAD 37a0c1b）。图中数值为当前 @export 默认值。
+    </div>
+
+  </div>
+</div>
+</html>
