@@ -21,6 +21,11 @@ enum Tag { OFFENSE, DEFENSE, MOBILITY, UTILITY }
 @export var magnet := 0.0
 @export var drop_pct := 0.0
 @export var bounty_pct := 0.0
+@export var lifesteal_pct := 0.0
+@export var auto_attack := 0
+@export var special_damage_pct := 0.0
+@export var special_cd_pct := 0.0
+@export var special_radius_pct := 0.0
 
 
 static func make(p_id: String, p_tag: Tag, p_max: int) -> BuffDef:

@@ -27,7 +27,8 @@ open -a Godot /Users/huhaixiao/github/neon-rust
 | --- | --- | --- |
 | 移动（左摇杆） | `W` `A` `S` `D` / 方向键 | 左摇杆 `JOY_AXIS_LEFT_*` |
 | 瞄准（右摇杆） | 鼠标位置 | 右摇杆 |
-| 开火 | 鼠标左键（按住连发） | `RB` 或 `RT` 轴 |
+| 开火 | 鼠标左键（按住连发） | `X`（或 `RB` / `RT` 轴） |
+| 特殊攻击 | `E` / 鼠标右键 | `Y` |
 | 冲刺 | `Space` | `B` / `LB` |
 | 暂停 | `Esc` | `START` / `BACK`（左右两个菜单键都行） |
 | 重开 | `R` / `Enter` | `A` |
@@ -37,7 +38,9 @@ open -a Godot /Users/huhaixiao/github/neon-rust
 | 静音 | `M` | — |
 | 全屏 | `F11` | — |
 
-HUD 会检测是否接了手柄：接了就把提示切成手柄说法（`RT FIRE` / `B DASH` / `START OR ESC TO RESUME` / `A REDEPLOY / START TITLE`），没接就显示键鼠说法。插拔手柄会即时切换。
+HUD 会检测是否接了手柄：接了就把提示切成手柄说法（`X FIRE` / `Y SPECIAL` / `B DASH` / `START OR ESC TO RESUME` / `A REDEPLOY / START TITLE`），没接就显示键鼠说法。插拔手柄会即时切换。
+
+右摇杆松开后不会把准星弹回鼠标位置：游戏会记住松开前的指向，直到你真正移动鼠标才重新交给鼠标。
 
 键位在 `modules/global/autoload/input_setup.gd` 里用代码注册（运行时写入 InputMap），改键只改这一处；若你在项目设置里手写过同名 action，代码会尊重你的设置。
 
@@ -99,7 +102,7 @@ HUD 会检测是否接了手柄：接了就把提示切成手柄说法（`RT FIR
 1. 用 LocalSend 把 `build/neon-rust-linux-x86_64.zip` 发到 Deck，在「下载」目录里解压。
 2. 桌面模式双击 `linux/neon-rust.x86_64`；如果没反应，先在 Konsole 里 `chmod +x neon-rust.x86_64` 再双击（zip 会保留可执行位，直接拷单个文件用 FAT 盘则会丢）。
 3. 想进游戏模式：Steam → 库 → 添加非 Steam 游戏 → 选中该可执行文件；**Steam Input 建议设为「禁用」或「手柄」**，否则 A/B/RT 会被 Steam 的桌面模板重映射。
-4. 手感确认：左摇杆移动、右摇杆瞄准、RT 开火、B 冲刺、START 暂停、A 重开；HUD 检测到手柄后会把文案切成 `RT FIRE / B DASH / START OR ESC TO RESUME / PRESS A TO REDEPLOY`。
+4. 手感确认：左摇杆移动、右摇杆瞄准、`X` 开火、`Y` 特殊攻击、`B` 冲刺、`START` 暂停、`A` 重开；HUD 检测到手柄后会把文案切成 `X FIRE / Y SPECIAL / B DASH / START OR ESC TO RESUME / PRESS A TO REDEPLOY`。
 5. 1280×720 会被 `canvas_items + expand` 自适应到 1280×800；F11 可切全屏。
 
 ## 实时调试（Steam Deck）
@@ -127,6 +130,20 @@ HUD 会检测是否接了手柄：接了就把提示切成手柄说法（`RT FIR
 - 玩家 100 HP；冲刺 0.13 秒、期间无敌、冷却 1.5 秒。
 - 死亡后场景暂停并弹出 SYSTEM FAILURE 面板，`R` 立即重开；最高分写入 `user://neon_rust.cfg`。
 
+## 特殊攻击：奇点 / Singularity
+
+`E` / 手柄 `Y` 放出一圈 360° 脉冲：基础 55 伤害、半径 240、冷却 8 秒，同时清掉范围内的敌方子弹，适合被围住时救场。HUD 左上第二行显示 `NOVA // READY [Y]` 或当前冷却百分比。
+
+普通攻击和特殊攻击都能靠波次奖励升级：
+
+- 普通攻击：OVERCLOCK（伤害）、RAPID CYCLE（射速）、SPLIT SHOT（多一发）、PIERCING ROUNDS（穿透）；
+- 特殊攻击：SINGULARITY CORE（伤害 +40%）、OVERLOAD CIRCUIT（冷却 −20%）、SHOCKWAVE LENS（半径 +18%）；
+- 额外玩法：LIFE SIPHON（造成伤害的 4% 回血）、SENTRY DRONE（自动攻击最近敌人的哨戒机）。
+
+![奇点脉冲](docs/screenshots/nova.png)
+
+![哨戒无人机](docs/screenshots/sentry.png)
+
 ## Buff 系统
 
 清空一波后游戏时停，弹出三张模块卡，选一张留到本局结束（死亡或重开）。
@@ -143,13 +160,18 @@ HUD 会检测是否接了手柄：接了就把提示切成手柄说法（`RT FIR
 | RAPID CYCLE | OFFENSE | 射速 +18% | 3 |
 | SPLIT SHOT | OFFENSE | 额外一发弹丸（72% 伤害） | 2 |
 | PIERCING ROUNDS | OFFENSE | 穿透 +1 个目标 | 2 |
+| SINGULARITY CORE | OFFENSE | 特殊攻击伤害 +40% | 3 |
+| SHOCKWAVE LENS | OFFENSE | 特殊攻击半径 +18% | 2 |
 | HULL PLATING | DEFENSE | 生命上限 +25 并回 25 | 3 |
 | REPAIR DRONE | DEFENSE | 每次击杀回 3 血 | 3 |
 | PHASE CAPACITOR | DEFENSE | 冲刺冷却 −25% | 2 |
+| LIFE SIPHON | DEFENSE | 造成伤害的 4% 转化为生命 | 3 |
 | THRUSTER TUNE | MOBILITY | 移速 +12% | 3 |
 | MAGNET COIL | UTILITY | 拾取物 430px 内自动吸附 | 2 |
 | SALVAGE RIG | UTILITY | 掉落几率 +70% | 2 |
 | BOUNTY CHIP | UTILITY | 波次结算奖励 +50% | 2 |
+| SENTRY DRONE | UTILITY | 自动攻击最近敌人，每层射速更快 | 3 |
+| OVERLOAD CIRCUIT | UTILITY | 特殊攻击冷却 −20% | 3 |
 
 ![wave-clear draft](docs/screenshots/draft.png)
 
@@ -207,18 +229,18 @@ python3 tools/png_sample.py <png> x,y   # 不装 PIL 也能查像素，用于核
 # 无头冒烟测试：加载主场景、跑若干帧、推进波次、开火、冲刺、击杀，全部走真实脚本
 /Applications/Godot.app/Contents/MacOS/Godot --headless --path . res://tests/smoke_test.tscn
 /Applications/Godot.app/Contents/MacOS/Godot --headless --path . res://tests/pause_test.tscn   # 暂停时玩法必须冻结、输入层仍活着
-/Applications/Godot.app/Contents/MacOS/Godot --headless --path . res://tests/buffs_test.tscn   # 抽卡/叠加上限/各项数值生效/三选一时停
+/Applications/Godot.app/Contents/MacOS/Godot --headless --path . res://tests/buffs_test.tscn   # 抽卡/叠加上限/吸血/哨戒机/奇点升级/三选一时停
 /Applications/Godot.app/Contents/MacOS/Godot --headless --path . res://tests/l10n_test.tscn     # 中英表 key 对齐 / 切换持久化 / 各界面热刷新 / 选卡仍生效
 # 期望输出：SMOKE TEST: PASS
 
-# 窗口截图验收：合成输入并抓 14 张图到 /tmp/neon_rust_shots/（含 4 张中文对照）
+# 窗口截图验收：合成输入并抓 16 张图到 /tmp/neon_rust_shots/（含 5 张中文对照）
 /Applications/Godot.app/Contents/MacOS/Godot --path . res://tests/capture.tscn
 ```
 
 ## 已知限制 / 下一步
 
 - 音效是纯合成占位，没有音乐轨；`Fx` 里已经留好音效池，换成真素材只需替换 `modules/global/assets/audio/sfx/`。
-- 目前只有一种武器（加“超载”变体）；成长靠波次 buff，没有商店或跨局解锁。
+- 目前普通攻击与特殊攻击共用一套武器底座（脉冲 / 奇点）；成长靠波次 buff，没有商店或跨局解锁。
 - 场地是单张 1600×1000 底图，没有可破坏掩体或视线遮挡。
 - `tools/generate_assets.py` 仍会顺带生成一张 `floor_tile.png`（早期平铺方案的遗留，当前场景不使用），可以删掉那段代码。
 

@@ -98,6 +98,64 @@ func _run() -> void:
 	if player.health != 53:
 		_fail("REPAIR DRONE healed to %d, expected 53" % player.health)
 
+	# --- lifesteal converts a share of damage into health ----------------
+	var leech := BuffPool.find("leech")
+	if leech == null:
+		_fail("BuffPool is missing LIFE SIPHON")
+	else:
+		Game.add_buff(leech)
+		player.health = 50
+		player._steal_acc = 0.0
+		player.on_damage_dealt(100.0)
+		if player.health != 54:
+			_fail("LIFE SIPHON healed to %d, expected 54" % player.health)
+
+	# --- sentry drone auto-fires at the nearest enemy --------------------
+	var sentry := BuffPool.find("sentry")
+	if sentry == null:
+		_fail("BuffPool is missing SENTRY DRONE")
+	else:
+		Game.add_buff(sentry)
+		if Game.buff_auto_attack != 1:
+			_fail("SENTRY DRONE did not unlock the auto attack")
+		var auto_target := (load("res://modules/enemies/enemy.tscn") as PackedScene).instantiate() as Enemy
+		auto_target.configure(Enemy.Kind.CHASER, 1)
+		auto_target.position = player.global_position + Vector2(220.0, 0.0)
+		Game.enemies_root.add_child(auto_target)
+		await get_tree().create_timer(1.4).timeout
+		if is_instance_valid(auto_target) and auto_target.health >= auto_target.health_max:
+			_fail("SENTRY DRONE did not fire at the nearby enemy")
+		if is_instance_valid(auto_target) and not auto_target.is_queued_for_deletion():
+			auto_target.queue_free()
+
+	# --- special pulse + its upgrade lines -------------------------------
+	var core := BuffPool.find("nova_core")
+	var cycle := BuffPool.find("nova_cycle")
+	var lens := BuffPool.find("nova_radius")
+	if core == null or cycle == null or lens == null:
+		_fail("BuffPool is missing a special-attack buff")
+	else:
+		Game.add_buff(core)
+		Game.add_buff(cycle)
+		Game.add_buff(lens)
+		if not is_equal_approx(Game.buff_special_damage_mult, 1.4):
+			_fail("SINGULARITY CORE gave special damage x%.2f" % Game.buff_special_damage_mult)
+		if not is_equal_approx(Game.buff_special_cd_mult, 0.8):
+			_fail("OVERLOAD CIRCUIT gave special cooldown x%.2f" % Game.buff_special_cd_mult)
+		if not is_equal_approx(Game.buff_special_radius_mult, 1.18):
+			_fail("SHOCKWAVE LENS gave special radius x%.2f" % Game.buff_special_radius_mult)
+		var blast_target := (load("res://modules/enemies/enemy.tscn") as PackedScene).instantiate() as Enemy
+		blast_target.configure(Enemy.Kind.CHASER, 1)
+		blast_target.position = player.global_position + Vector2(140.0, 0.0)
+		Game.enemies_root.add_child(blast_target)
+		await get_tree().physics_frame
+		player.fire_special()
+		await get_tree().physics_frame
+		if is_instance_valid(blast_target) and not blast_target.is_queued_for_deletion() and not blast_target.dead:
+			_fail("special pulse did not kill the enemy inside the ring")
+		if player.is_special_ready():
+			_fail("special pulse did not start its cooldown")
+
 	# --- magnet coil drags pickups in -------------------------------------
 	Game.add_buff(BuffPool.find("magnet"))
 	var pickup := (load("res://modules/pickups/pickup.tscn") as PackedScene).instantiate() as Pickup

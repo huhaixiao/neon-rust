@@ -69,6 +69,14 @@ func _run() -> void:
 	Input.warp_mouse(Vector2(900, 260))
 	await get_tree().create_timer(0.55).timeout
 	await _shot("02_combat")
+	# Special pulse: ring + the enemies inside it, for the HUD and FX review.
+	player.fire_special()
+	await get_tree().create_timer(0.16).timeout
+	await _shot("02b_nova")
+	# Sentry drone: the auto-attack reward, orbiting and firing on its own.
+	Game.add_buff(BuffPool.find("sentry"))
+	await get_tree().create_timer(0.7).timeout
+	await _shot("02c_sentry")
 
 	Input.action_press("move_right")
 	await get_tree().create_timer(0.6).timeout

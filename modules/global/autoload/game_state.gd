@@ -52,6 +52,11 @@ var buff_move_mult := 1.0
 var buff_magnet := 0.0
 var buff_drop_mult := 1.0
 var buff_bounty_mult := 1.0
+var buff_lifesteal := 0.0
+var buff_auto_attack := 0
+var buff_special_damage_mult := 1.0
+var buff_special_cd_mult := 1.0
+var buff_special_radius_mult := 1.0
 
 
 func _ready() -> void:
@@ -140,6 +145,11 @@ func add_buff(def: BuffDef) -> bool:
 	buff_magnet += def.magnet
 	buff_drop_mult += def.drop_pct
 	buff_bounty_mult += def.bounty_pct
+	buff_lifesteal += def.lifesteal_pct
+	buff_auto_attack += def.auto_attack
+	buff_special_damage_mult += def.special_damage_pct
+	buff_special_cd_mult = maxf(0.4, buff_special_cd_mult - def.special_cd_pct)
+	buff_special_radius_mult += def.special_radius_pct
 	if def.health_add > 0 and player is PlayerUnit:
 		(player as PlayerUnit).add_max_health(def.health_add)
 	buff_changed.emit(def, stacks + 1)
@@ -159,6 +169,11 @@ func _reset_buffs() -> void:
 	buff_magnet = 0.0
 	buff_drop_mult = 1.0
 	buff_bounty_mult = 1.0
+	buff_lifesteal = 0.0
+	buff_auto_attack = 0
+	buff_special_damage_mult = 1.0
+	buff_special_cd_mult = 1.0
+	buff_special_radius_mult = 1.0
 
 
 func add_score(amount: int) -> void:

@@ -68,6 +68,36 @@ func _run() -> void:
 	if is_instance_valid(enemy) and not enemy.is_queued_for_deletion() and enemy.health > 0.0:
 		_fail("player bullet did not damage the enemy")
 
+	# --- right stick release keeps the last heading ----------------------
+	if player != null:
+		player.aim = Vector2.LEFT
+		player.aim = player.resolve_aim(Vector2.RIGHT, Vector2(-10.0, -10.0))
+		if player.aim.distance_to(Vector2.RIGHT) > 0.01:
+			_fail("right stick did not set aim to the right")
+		player.aim = player.resolve_aim(Vector2.ZERO, Vector2(-10.0, -10.0))
+		if player.aim.distance_to(Vector2.RIGHT) > 0.01:
+			_fail("aim snapped away after the right stick was released")
+		player._aim_from_stick = false
+		var mouse_aim := player.resolve_aim(Vector2.ZERO, Vector2(0.0, -10.0))
+		if mouse_aim.distance_to(Vector2.UP) > 0.01:
+			_fail("mouse did not take over aim after a real move")
+		player.aim = Vector2.RIGHT
+
+	# --- special pulse clears nearby enemies -----------------------------
+	if player != null:
+		var nova_scene: PackedScene = load("res://modules/enemies/enemy.tscn")
+		var nova_target := nova_scene.instantiate() as Enemy
+		nova_target.configure(Enemy.Kind.CHASER, 1)
+		nova_target.position = player.global_position + Vector2(90.0, 0.0)
+		Game.enemies_root.add_child(nova_target)
+		await get_tree().physics_frame
+		player.fire_special()
+		await get_tree().physics_frame
+		if is_instance_valid(nova_target) and not nova_target.is_queued_for_deletion() and not nova_target.dead:
+			_fail("special pulse did not damage the enemy inside its radius")
+		if player.is_special_ready():
+			_fail("special pulse did not start its cooldown")
+
 	# --- pickup ---------------------------------------------------------
 	if player != null:
 		player.health = 40

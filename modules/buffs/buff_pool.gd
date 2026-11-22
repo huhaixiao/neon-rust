@@ -24,6 +24,14 @@ static func all() -> Array[BuffDef]:
 	pierce.pierce = 1
 	defs.append(pierce)
 
+	var nova_core := BuffDef.make("nova_core", BuffDef.Tag.OFFENSE, 3)
+	nova_core.special_damage_pct = 0.4
+	defs.append(nova_core)
+
+	var nova_radius := BuffDef.make("nova_radius", BuffDef.Tag.OFFENSE, 2)
+	nova_radius.special_radius_pct = 0.18
+	defs.append(nova_radius)
+
 	# --- DEFENSE ---------------------------------------------------------
 	var hull := BuffDef.make("hull", BuffDef.Tag.DEFENSE, 3)
 	hull.health_add = 25
@@ -36,6 +44,10 @@ static func all() -> Array[BuffDef]:
 	var phase := BuffDef.make("phase", BuffDef.Tag.DEFENSE, 2)
 	phase.dash_cd_pct = 0.25
 	defs.append(phase)
+
+	var leech := BuffDef.make("leech", BuffDef.Tag.DEFENSE, 3)
+	leech.lifesteal_pct = 0.04
+	defs.append(leech)
 
 	# --- MOBILITY --------------------------------------------------------
 	var thrust := BuffDef.make("thrust", BuffDef.Tag.MOBILITY, 3)
@@ -54,6 +66,14 @@ static func all() -> Array[BuffDef]:
 	var bounty := BuffDef.make("bounty", BuffDef.Tag.UTILITY, 2)
 	bounty.bounty_pct = 0.5
 	defs.append(bounty)
+
+	var sentry := BuffDef.make("sentry", BuffDef.Tag.UTILITY, 3)
+	sentry.auto_attack = 1
+	defs.append(sentry)
+
+	var nova_cycle := BuffDef.make("nova_cycle", BuffDef.Tag.UTILITY, 3)
+	nova_cycle.special_cd_pct = 0.2
+	defs.append(nova_cycle)
 
 	return defs
 

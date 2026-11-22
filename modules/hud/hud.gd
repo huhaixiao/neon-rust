@@ -14,6 +14,7 @@ signal title_requested
 @onready var hull_label: Label = $Root/HullLabel
 @onready var health_fill: ColorRect = $Root/HealthBack/HealthFill
 @onready var weapon_label: Label = $Root/WeaponLabel
+@onready var special_label: Label = $Root/SpecialLabel
 @onready var wave_label: Label = $Root/WaveLabel
 @onready var score_label: Label = $Root/ScoreLabel
 @onready var best_label: Label = $Root/BestLabel
@@ -97,6 +98,12 @@ func _process(_delta: float) -> void:
 	else:
 		weapon_label.text = L10n.t("hud.dash_charge") % (player.dash_ratio() * 100.0)
 		weapon_label.modulate = Color(0.45, 0.72, 0.82, 1.0)
+	if player.is_special_ready():
+		special_label.text = L10n.t("hud.special_ready") % _special_key()
+		special_label.modulate = Color(0.75, 0.9, 1.0, 1.0)
+	else:
+		special_label.text = L10n.t("hud.special_charge") % (player.special_ratio() * 100.0)
+		special_label.modulate = Color(0.45, 0.62, 0.78, 1.0)
 	if _debug_on:
 		_update_debug(player)
 
@@ -321,6 +328,10 @@ func show_pause(paused: bool) -> void:
 
 func _dash_key() -> String:
 	return "B" if _pad_mode else "SPACE"
+
+
+func _special_key() -> String:
+	return "Y" if _pad_mode else "E"
 
 
 func _on_joypad_changed(_device: int, _connected: bool) -> void:

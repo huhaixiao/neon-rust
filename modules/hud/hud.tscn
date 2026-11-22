@@ -117,6 +117,17 @@ theme_override_constants/outline_size = 3
 theme_override_font_sizes/font_size = 13
 text = "PULSE  //  DASH READY"
 
+[node name="SpecialLabel" type="Label" parent="Root"]
+offset_left = 30.0
+offset_top = 82.0
+offset_right = 400.0
+offset_bottom = 102.0
+theme_override_colors/font_color = Color(0.75, 0.85, 1, 1)
+theme_override_colors/font_outline_color = Color(0.01, 0.02, 0.04, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+text = "NOVA  //  READY  [E]"
+
 [node name="ControlHint" type="Label" parent="Root"]
 anchor_top = 1.0
 anchor_bottom = 1.0

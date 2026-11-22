@@ -66,6 +66,9 @@ func _on_body_entered(body: Node2D) -> void:
 		if enemy == null or _hit_bodies.has(body):
 			return
 		enemy.take_damage(damage, global_position)
+		var player := Game.player as PlayerUnit
+		if player != null:
+			player.on_damage_dealt(damage)
 		Fx.burst(global_position, tint, 4, 130.0, 0.5)
 		_hit_bodies.append(body)
 		if _left > 0:
