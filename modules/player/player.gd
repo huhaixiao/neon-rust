@@ -3,7 +3,7 @@ extends CharacterBody2D
 ## Twin-stick player: eight-way move, free aim (mouse or right stick),
 ## hold-to-fire, and a dash with invulnerability frames.
 
-const BULLET_SCENE := preload("res://scenes/bullet.tscn")
+const BULLET_SCENE := preload("res://modules/projectiles/bullet.tscn")
 
 @export var move_speed := 430.0
 @export var dash_speed := 1500.0

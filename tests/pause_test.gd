@@ -14,7 +14,7 @@ func _ready() -> void:
 
 func _run() -> void:
 	await get_tree().process_frame
-	var level: Node = (load("res://scenes/main.tscn") as PackedScene).instantiate()
+	var level: Node = (load("res://main.tscn") as PackedScene).instantiate()
 	add_child(level)
 	await get_tree().process_frame
 	await get_tree().physics_frame
@@ -36,11 +36,11 @@ func _run() -> void:
 	Input.action_release("move_right")
 
 	# --- freeze one enemy + one bullet so we can watch them ------------
-	var enemy := (load("res://scenes/enemy.tscn") as PackedScene).instantiate() as Enemy
+	var enemy := (load("res://modules/enemies/enemy.tscn") as PackedScene).instantiate() as Enemy
 	enemy.configure(Enemy.Kind.CHASER, 1)
 	enemy.position = Vector2(400.0, 300.0)
 	Game.enemies_root.add_child(enemy)
-	var bullet := (load("res://scenes/bullet.tscn") as PackedScene).instantiate()
+	var bullet := (load("res://modules/projectiles/bullet.tscn") as PackedScene).instantiate()
 	bullet.setup(Vector2.RIGHT, 100.0, 300.0, true, Color.WHITE)
 	bullet.position = Vector2(500.0, 300.0)
 	Game.bullets_root.add_child(bullet)

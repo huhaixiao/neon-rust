@@ -9,7 +9,7 @@ enum Kind { CHASER, BRUTE, SPITTER }
 const TEX_CHASER := preload("res://assets/sprites/enemy_chaser.png")
 const TEX_BRUTE := preload("res://assets/sprites/enemy_brute.png")
 const TEX_SPITTER := preload("res://assets/sprites/enemy_spitter.png")
-const BULLET_SCENE := preload("res://scenes/bullet.tscn")
+const BULLET_SCENE := preload("res://modules/projectiles/bullet.tscn")
 
 @export var kind: Kind = Kind.CHASER
 

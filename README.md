@@ -32,7 +32,7 @@ open -a Godot /Users/huhaixiao/github/neon-rust
 
 HUD 会检测是否接了手柄：接了就把提示切成手柄说法（`RT FIRE` / `B DASH` / `START OR ESC TO RESUME` / `PRESS A TO REDEPLOY`），没接就显示键鼠说法。插拔手柄会即时切换。
 
-键位在 `scripts/input_setup.gd` 里用代码注册（运行时写入 InputMap），改键只改这一处；若你在项目设置里手写过同名 action，代码会尊重你的设置。
+键位在 `modules/global/autoload/input_setup.gd` 里用代码注册（运行时写入 InputMap），改键只改这一处；若你在项目设置里手写过同名 action，代码会尊重你的设置。
 
 ## 在 Steam Deck 上试玩
 
@@ -86,15 +86,16 @@ HUD 会检测是否接了手柄：接了就把提示切成手柄说法（`RT FIR
 ```
 neon-rust/
 ├─ project.godot          # 1280×720，canvas_items 拉伸，Forward+
-├─ scenes/
-│  ├─ main.tscn           # 竞技场底图 + 各实体容器 + 相机 + HUD
-│  ├─ player.tscn / enemy.tscn / bullet.tscn / pickup.tscn
-│  └─ hud.tscn            # HUD 与暂停 / 结算面板
-├─ scripts/
-│  ├─ game_state.gd       # 全局状态（autoload `Game`）：分数、波次、场景引用、存档
-│  ├─ input_setup.gd      # 运行时注册 InputMap（autoload `InputSetup`）
-│  ├─ fx.gd               # 粒子、屏幕闪光、冲刺残影、音效池（autoload `Fx`）
-│  ├─ player.gd / enemy.gd / bullet.gd / pickup.gd / spawner.gd / camera_rig.gd / hud.gd / main.gd
+├─ main.tscn + main.gd    # 唯一入口：竞技场底图 + 各模块装配 + 输入/暂停/重开
+├─ modules/
+│  ├─ global/autoload/    # Game 全局状态 + 存档 / InputSetup 键位 / Fx 粒子音效池
+│  ├─ player/             # player.tscn + player.gd
+│  ├─ enemies/            # enemy.tscn + enemy.gd（三型共用一套场景）
+│  ├─ projectiles/        # bullet.tscn + bullet.gd（敌我共用）
+│  ├─ pickups/            # pickup.tscn + pickup.gd
+│  ├─ waves/              # spawner.gd 波次导演
+│  ├─ camera/             # camera_rig.gd 跟随与震屏
+│  └─ hud/                # hud.tscn + hud.gd HUD 与暂停 / 结算面板
 ├─ assets/sprites/        # 全部由脚本生成，无外部素材
 ├─ assets/sounds/         # 8 个合成音效
 ├─ tools/                 # 资源生成与像素采样脚本（纯标准库，无第三方依赖）

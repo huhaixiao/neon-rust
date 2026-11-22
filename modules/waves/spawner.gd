@@ -3,8 +3,8 @@ extends Node2D
 ## Wave director: builds a budget per wave, trickles enemies in from the arena
 ## edges, waits for a full clear, then hands out a bonus and the next wave.
 
-const ENEMY_SCENE := preload("res://scenes/enemy.tscn")
-const PICKUP_SCENE := preload("res://scenes/pickup.tscn")
+const ENEMY_SCENE := preload("res://modules/enemies/enemy.tscn")
+const PICKUP_SCENE := preload("res://modules/pickups/pickup.tscn")
 
 var wave := 0
 

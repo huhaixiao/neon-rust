@@ -14,7 +14,7 @@ func _ready() -> void:
 
 func _run() -> void:
 	await get_tree().process_frame
-	var level_scene: PackedScene = load("res://scenes/main.tscn")
+	var level_scene: PackedScene = load("res://main.tscn")
 	if level_scene == null:
 		_fail("main.tscn did not load")
 		_report()
@@ -50,14 +50,14 @@ func _run() -> void:
 			_fail("take_damage did not reduce health")
 
 	# --- bullet -> enemy collision -------------------------------------
-	var enemy_scene: PackedScene = load("res://scenes/enemy.tscn")
+	var enemy_scene: PackedScene = load("res://modules/enemies/enemy.tscn")
 	var enemy := enemy_scene.instantiate() as Enemy
 	enemy.configure(Enemy.Kind.CHASER, 1)
 	enemy.position = Vector2(1000.0, 500.0)
 	Game.enemies_root.add_child(enemy)
 	await get_tree().physics_frame
 
-	var bullet_scene: PackedScene = load("res://scenes/bullet.tscn")
+	var bullet_scene: PackedScene = load("res://modules/projectiles/bullet.tscn")
 	var bullet := bullet_scene.instantiate()
 	bullet.setup(Vector2.RIGHT, 200.0, 900.0, true, Color.WHITE)
 	bullet.position = Vector2(900.0, 500.0)
@@ -71,7 +71,7 @@ func _run() -> void:
 	if player != null:
 		player.health = 40
 		Game.set_health(player.health, player.max_health)
-		var pickup_scene: PackedScene = load("res://scenes/pickup.tscn")
+		var pickup_scene: PackedScene = load("res://modules/pickups/pickup.tscn")
 		var pickup := pickup_scene.instantiate() as Pickup
 		pickup.setup(Pickup.Kind.HEALTH)
 		pickup.position = player.global_position + Vector2(40.0, 0.0)

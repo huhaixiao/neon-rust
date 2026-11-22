@@ -1,6 +1,6 @@
 [gd_scene load_steps=8 format=3]
 
-[ext_resource type="Script" path="res://scripts/player.gd" id="1_player"]
+[ext_resource type="Script" path="res://modules/player/player.gd" id="1_player"]
 [ext_resource type="Texture2D" path="res://assets/sprites/player.png" id="2_ship"]
 [ext_resource type="Texture2D" path="res://assets/sprites/flash.png" id="3_flash"]
 [ext_resource type="AudioStreamWAV" path="res://assets/sounds/shoot.wav" id="4_shoot"]

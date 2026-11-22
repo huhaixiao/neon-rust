@@ -18,7 +18,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	var level: Node = load("res://scenes/main.tscn").instantiate()
+	var level: Node = load("res://main.tscn").instantiate()
 	add_child(level)
 	await get_tree().create_timer(0.9).timeout
 	Input.warp_mouse(Vector2(760, 300))
@@ -26,7 +26,7 @@ func _run() -> void:
 
 	# Stage a readable fight: a chaser line, a brute and a spitter.
 	await get_tree().create_timer(2.2).timeout
-	var enemy_scene: PackedScene = load("res://scenes/enemy.tscn")
+	var enemy_scene: PackedScene = load("res://modules/enemies/enemy.tscn")
 	var player := Game.player as PlayerUnit
 	var origin := player.global_position if player != null else Vector2(800, 500)
 	var placements := [
@@ -55,7 +55,7 @@ func _run() -> void:
 	Input.action_release("fire")
 
 	# Drop a pickup in front of the player for a clean read of the sprite set.
-	var pickup_scene: PackedScene = load("res://scenes/pickup.tscn")
+	var pickup_scene: PackedScene = load("res://modules/pickups/pickup.tscn")
 	var pickup := pickup_scene.instantiate() as Pickup
 	pickup.setup(Pickup.Kind.OVERDRIVE)
 	pickup.position = origin + Vector2(120, -90)
