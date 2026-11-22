@@ -10,6 +10,7 @@ signal resume_requested
 signal restart_requested
 signal title_requested
 
+@onready var root: Control = $Root
 @onready var hull_label: Label = $Root/HullLabel
 @onready var health_fill: ColorRect = $Root/HealthBack/HealthFill
 @onready var weapon_label: Label = $Root/WeaponLabel
@@ -19,7 +20,9 @@ signal title_requested
 @onready var banner: Label = $Root/Banner
 @onready var banner_sub: Label = $Root/BannerSub
 @onready var pause_layer: Control = $Root/PauseLayer
+@onready var pause_title: Label = $Root/PauseLayer/Panel/PauseTitle
 @onready var game_over: Control = $Root/GameOver
+@onready var over_title: Label = $Root/GameOver/Title
 @onready var over_score: Label = $Root/GameOver/ScoreValue
 @onready var over_best: Label = $Root/GameOver/BestValue
 @onready var control_hint: Label = $Root/ControlHint
@@ -28,12 +31,14 @@ signal title_requested
 @onready var debug_label: Label = $Root/DebugLabel
 @onready var buff_list: Label = $Root/BuffList
 @onready var options_layer: Control = $Root/OptionsLayer
+@onready var options_title: Label = $Root/OptionsLayer/Panel/OptionsTitle
 @onready var btn_resume: Button = $Root/PauseLayer/Panel/BtnResume
 @onready var btn_restart: Button = $Root/PauseLayer/Panel/BtnRestart
 @onready var btn_options: Button = $Root/PauseLayer/Panel/BtnOptions
 @onready var btn_quit: Button = $Root/PauseLayer/Panel/BtnQuit
 @onready var btn_fullscreen: Button = $Root/OptionsLayer/Panel/BtnFullscreen
 @onready var btn_sound: Button = $Root/OptionsLayer/Panel/BtnSound
+@onready var btn_language: Button = $Root/OptionsLayer/Panel/BtnLanguage
 @onready var btn_back: Button = $Root/OptionsLayer/Panel/BtnBack
 @onready var btn_redeploy: Button = $Root/GameOver/Actions/BtnRedeploy
 @onready var btn_title: Button = $Root/GameOver/Actions/BtnTitle
@@ -52,6 +57,7 @@ func _ready() -> void:
 	Game.buff_changed.connect(_on_buff_changed)
 	Game.run_started.connect(_on_run_started)
 	Game.run_ended.connect(_on_run_ended)
+	L10n.locale_changed.connect(_on_locale_changed)
 	_on_score(Game.score)
 	_on_health(Game.health, Game.max_health)
 	_reset_best()
@@ -65,8 +71,7 @@ func _ready() -> void:
 	debug_label.visible = false
 	options_layer.visible = false
 	_wire_menu()
-	_refresh_options()
-	_refresh_buffs()
+	_refresh_locale()
 
 
 func _process(_delta: float) -> void:
@@ -74,13 +79,13 @@ func _process(_delta: float) -> void:
 	if player == null or player.dead or not Game.running:
 		return
 	if player.overdrive_left > 0.0:
-		weapon_label.text = "OVERDRIVE  %.1fs" % player.overdrive_left
+		weapon_label.text = L10n.t("hud.overdrive") % player.overdrive_left
 		weapon_label.modulate = Color(1.0, 0.82, 0.35, 1.0)
 	elif player.is_dash_ready():
-		weapon_label.text = "PULSE  //  DASH READY  [%s]" % _dash_key()
+		weapon_label.text = L10n.t("hud.dash_ready") % _dash_key()
 		weapon_label.modulate = Color(0.55, 0.95, 1.0, 1.0)
 	else:
-		weapon_label.text = "PULSE  //  DASH %.0f%%" % (player.dash_ratio() * 100.0)
+		weapon_label.text = L10n.t("hud.dash_charge") % (player.dash_ratio() * 100.0)
 		weapon_label.modulate = Color(0.45, 0.72, 0.82, 1.0)
 	if _debug_on:
 		_update_debug(player)
@@ -137,6 +142,7 @@ func _wire_menu() -> void:
 	btn_back.pressed.connect(hide_options)
 	btn_fullscreen.pressed.connect(_on_fullscreen_pressed)
 	btn_sound.pressed.connect(_on_sound_pressed)
+	btn_language.pressed.connect(_on_language_pressed)
 	btn_redeploy.pressed.connect(func() -> void: restart_requested.emit())
 	btn_title.pressed.connect(func() -> void: title_requested.emit())
 
@@ -174,9 +180,42 @@ func _on_sound_pressed() -> void:
 	_refresh_options()
 
 
+func _on_language_pressed() -> void:
+	L10n.cycle()
+	_refresh_options()
+
+
+func _on_locale_changed(_code: String) -> void:
+	_refresh_locale()
+
+
+func _refresh_locale() -> void:
+	root.theme = L10n.ui_theme()
+	pause_title.text = L10n.t("hud.paused")
+	options_title.text = L10n.t("hud.options_title")
+	btn_resume.text = L10n.t("hud.resume")
+	btn_restart.text = L10n.t("hud.restart")
+	btn_options.text = L10n.t("hud.options")
+	btn_quit.text = L10n.t("hud.quit_title")
+	btn_back.text = L10n.t("hud.back")
+	btn_redeploy.text = L10n.t("hud.redeploy")
+	btn_title.text = L10n.t("hud.quit_title")
+	over_title.text = L10n.t("hud.game_over")
+	wave_label.text = L10n.t("hud.wave") % Game.wave
+	_refresh_options()
+	_refresh_input_copy()
+	_on_health(Game.health, Game.max_health)
+	_reset_best()
+	_refresh_buffs()
+	if game_over.visible:
+		over_best.text = L10n.t("hud.best") % Game.best_score
+	clear_banner()
+
+
 func _refresh_options() -> void:
-	btn_fullscreen.text = "FULLSCREEN    %s" % ("ON" if Game.is_fullscreen() else "OFF")
-	btn_sound.text = "SOUND    %s" % ("OFF" if Game.is_muted() else "ON")
+	btn_fullscreen.text = L10n.t("hud.fullscreen") % L10n.t("hud.on" if Game.is_fullscreen() else "hud.off")
+	btn_sound.text = L10n.t("hud.sound") % L10n.t("hud.off" if Game.is_muted() else "hud.on")
+	btn_language.text = L10n.t("hud.language") % L10n.language_label()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -209,13 +248,13 @@ func _on_joypad_changed(_device: int, _connected: bool) -> void:
 func _refresh_input_copy() -> void:
 	_pad_mode = Input.get_connected_joypads().size() > 0
 	if _pad_mode:
-		control_hint.text = "LSTICK  MOVE     RSTICK  AIM     RT  FIRE     B  DASH"
-		pause_hint.text = "DPAD  SELECT     A  CONFIRM     START  RESUME"
-		over_hint.text = "A  REDEPLOY        START  TITLE"
+		control_hint.text = L10n.t("hud.controls.pad")
+		pause_hint.text = L10n.t("hud.pause_hint.pad")
+		over_hint.text = L10n.t("hud.over_hint.pad")
 	else:
-		control_hint.text = "WASD  MOVE     MOUSE  AIM     LMB  FIRE     SPACE  DASH"
-		pause_hint.text = "UP / DOWN  SELECT     ENTER  CONFIRM     ESC  RESUME"
-		over_hint.text = "R  REDEPLOY        ESC  TITLE"
+		control_hint.text = L10n.t("hud.controls.kb")
+		pause_hint.text = L10n.t("hud.pause_hint.kb")
+		over_hint.text = L10n.t("hud.over_hint.kb")
 
 
 func _on_score(value: int) -> void:
@@ -231,16 +270,16 @@ func _on_health(current: int, maximum: int) -> void:
 		health_fill.color = Color(1.0, 0.78, 0.25, 1.0)
 	else:
 		health_fill.color = Color(0.28, 1.0, 0.62, 1.0)
-	hull_label.text = "HULL  %03d" % current
+	hull_label.text = L10n.t("hud.hull") % current
 
 
 func _on_wave(index: int) -> void:
-	wave_label.text = "WAVE %02d" % index
-	_announce("WAVE %02d" % index, "INCOMING")
+	wave_label.text = L10n.t("hud.wave") % index
+	_announce(L10n.t("hud.wave") % index, L10n.t("hud.incoming"))
 
 
 func _on_wave_cleared(index: int, bonus: int) -> void:
-	_announce("WAVE %02d CLEARED" % index, "+%d BONUS" % bonus)
+	_announce(L10n.t("hud.wave_cleared") % index, L10n.t("hud.bonus") % bonus)
 	_reset_best()
 
 
@@ -252,7 +291,7 @@ func clear_banner() -> void:
 
 
 func announce_buff(def: BuffDef) -> void:
-	_announce(def.title, "%s  //  %s" % [def.tag_label(), def.desc])
+	_announce(def.display_name(), "%s  //  %s" % [def.tag_label(), def.display_desc()])
 
 
 func _on_buff_changed(_def: BuffDef, _stacks: int) -> void:
@@ -260,7 +299,7 @@ func _on_buff_changed(_def: BuffDef, _stacks: int) -> void:
 
 
 func _refresh_buffs() -> void:
-	var lines: Array[String] = ["MODULES  %02d" % Game.buff_order.size()]
+	var lines: Array[String] = [L10n.t("hud.modules") % Game.buff_order.size()]
 	var by_id := {}
 	for def in BuffPool.all():
 		by_id[def.id] = def
@@ -271,10 +310,10 @@ func _refresh_buffs() -> void:
 		var def: BuffDef = by_id.get(id)
 		if def == null:
 			continue
-		lines.append("%s  x%d" % [def.title, Game.buff_stacks(id)])
+		lines.append("%s  x%d" % [def.display_name(), Game.buff_stacks(id)])
 		shown += 1
 	if Game.buff_order.size() > shown:
-		lines.append("+%d MORE" % (Game.buff_order.size() - shown))
+		lines.append(L10n.t("hud.more") % (Game.buff_order.size() - shown))
 	buff_list.text = "\n".join(lines)
 
 
@@ -285,13 +324,13 @@ func _on_run_started() -> void:
 	control_hint.visible = true
 	_reset_best()
 	_refresh_buffs()
-	_announce("NEON RUST", "SURVIVE THE WAVES")
+	_announce("NEON RUST", L10n.t("hud.survive"))
 
 
 func _on_run_ended(final_score: int, best: int) -> void:
 	over_score.text = "%06d" % final_score
-	over_best.text = "BEST  %06d" % best
-	best_label.text = "BEST  %06d" % best
+	over_best.text = L10n.t("hud.best") % best
+	best_label.text = L10n.t("hud.best") % best
 	game_over.visible = true
 	control_hint.visible = false
 	btn_redeploy.grab_focus()
@@ -301,7 +340,7 @@ func _on_run_ended(final_score: int, best: int) -> void:
 
 
 func _reset_best() -> void:
-	best_label.text = "BEST  %06d" % Game.best_score
+	best_label.text = L10n.t("hud.best") % Game.best_score
 
 
 func _announce(title: String, subtitle: String) -> void:

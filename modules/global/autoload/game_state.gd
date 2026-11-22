@@ -225,6 +225,9 @@ func _load_best() -> int:
 
 
 func _save_best() -> void:
+	# Load first: the same file carries the language setting, and a fresh
+	# ConfigFile would wipe it every time a run ends with a new record.
 	var cfg := ConfigFile.new()
+	cfg.load(SAVE_PATH)
 	cfg.set_value("scores", "best", best_score)
 	cfg.save(SAVE_PATH)

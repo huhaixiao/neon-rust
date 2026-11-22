@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 InputSetup="*res://modules/global/autoload/input_setup.gd"
+L10n="*res://modules/l10n/l10n.gd"
 Game="*res://modules/global/autoload/game_state.gd"
 Fx="*res://modules/global/autoload/fx.gd"
 

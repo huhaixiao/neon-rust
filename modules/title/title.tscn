@@ -42,6 +42,20 @@ theme_override_constants/outline_size = 2
 theme_override_font_sizes/font_size = 12
 text = "SECTOR  07    //    NEON  RUST"
 
+[node name="LangButton" type="Button" parent="UI/Root"]
+offset_left = 28.0
+offset_top = 50.0
+offset_right = 328.0
+offset_bottom = 78.0
+focus_mode = 0
+theme_override_colors/font_color = Color(0.42, 0.62, 0.72, 1)
+theme_override_colors/font_hover_color = Color(0.75, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.85, 0.45, 1)
+theme_override_font_sizes/font_size = 12
+flat = true
+text = "LANGUAGE  //  ENGLISH"
+alignment = 0
+
 [node name="BestValue" type="Label" parent="UI/Root"]
 anchor_left = 1.0
 anchor_right = 1.0

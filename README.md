@@ -51,12 +51,37 @@ HUD 会检测是否接了手柄：接了就把提示切成手柄说法（`RT FIR
 | --- | --- |
 | `RESUME` | 继续这一局 |
 | `RESTART RUN` | 立刻重开（不用先死；暂停态按 `R` 同效） |
-| `OPTIONS` | 全屏 / 静音开关，`Esc` 返回上一级 |
+| `OPTIONS` | 全屏 / 静音 / 语言开关，`Esc` 返回上一级 |
 | `QUIT TO TITLE` | 直接退回首页 |
 
 打开菜单时焦点自动落在 `RESUME`，手柄上按 `A` 就是继续；菜单里的按键与 `stage.gd` 的热键共用同一套实现（全屏 / 静音都收敛到 `Game` 自动加载）。
 
 结算面板同样给了两个按钮：`REDEPLOY`（`R` / `A`）和 `QUIT TO TITLE`（`Esc` / `START`）。
+
+## 语言 / Language
+
+界面文案支持中文 / 英文，两处入口：
+
+- 首页左上角 `语言 // 中文`，点一下切换；
+- 暂停 → `设置` → `语言 中文`，点一下切换。
+
+切换即时生效（首页、HUD、暂停菜单、设置页、三选一卡片、buff 名与描述一起刷新），不用重开。首次启动跟随系统语言（`OS.get_locale_language() == "zh"` 进中文），之后以存档为准；语言写在 `user://neon_rust.cfg` 的 `[settings] language`，和最高分在同一个文件里。
+
+![中文首页](docs/screenshots/title_zh.png)
+
+实现上没有用 `TranslationServer`，而是纯代码字典，和仓库里数值 / 资源全部代码定义的风格一致：
+
+- 文案表：`modules/l10n/data/strings_en.gd`、`strings_zh.gd`，key 形如 `title.prompt`、`hud.wave`、`buff.overclock.name`；
+- 入口：autoload `L10n` → `t(key)` 取文案（占位符原样返回，调用方用 `%` 填值），`set_locale()` / `cycle()` 切换并持久化，`locale_changed` 信号让所有 UI 热刷新；
+- 缺 key 时回退英文，再回退 key 本身，不会出现空白按钮。
+
+**中文字体**：引擎内置字体没有 CJK 字形，而 `SystemFont` 在 macOS + Godot 4.7 上会返回空 face（连英文都会整屏消失），所以 `L10n.ui_theme()` 在中文下运行时用 `FontFile.load_dynamic_font()` 依次尝试系统字体：macOS `Hiragino Sans GB` / `STHeiti`、Windows `msyh` / `simhei`、Linux / SteamOS `Noto Sans CJK` / 文泉驿。找不到就退回引擎默认字体（英文仍可读，不会崩），不会把 UI 变成空白。
+
+> 打包注意：系统字体不随仓库分发。SteamOS 自带 Noto CJK，Windows 自带微软雅黑，一般不用管；如果要做到「任何机器都保证中文」，再往仓库里放一份可再分发的子集字体（如 Noto Sans SC）即可。
+
+![中文选卡](docs/screenshots/draft_zh.png)
+
+![中文设置页](docs/screenshots/options_zh.png)
 
 ## 在 Steam Deck 上试玩
 
@@ -148,7 +173,8 @@ neon-rust/
 │  ├─ waves/              # spawner.gd 波次导演
 │  ├─ camera/             # camera_rig.gd 跟随与震屏
 │  ├─ hud/                # hud.tscn + hud.gd HUD 与暂停 / 结算面板
-│  └─ buffs/              # buff_def / buff_pool + ui/ 波次间三选一（buff_select.tscn）
+│  ├─ buffs/              # buff_def / buff_pool + ui/ 波次间三选一（buff_select.tscn）
+│  └─ l10n/               # 中英文案表 + L10n autoload + 中文系统字体装配
 ├─ modules/*/assets/      # 素材按归属放置：单模块专用放该模块内
 ├─ modules/global/assets/ # 跨模块共用：arena_floor / crosshair / particle / flash + 8 个音效
 ├─ modules/global/components/ship_body.gd  # 玩家与敌人的共用基类：越界夹取 / 受击闪白计时 / 击退
@@ -177,9 +203,10 @@ python3 tools/png_sample.py <png> x,y   # 不装 PIL 也能查像素，用于核
 /Applications/Godot.app/Contents/MacOS/Godot --headless --path . res://tests/smoke_test.tscn
 /Applications/Godot.app/Contents/MacOS/Godot --headless --path . res://tests/pause_test.tscn   # 暂停时玩法必须冻结、输入层仍活着
 /Applications/Godot.app/Contents/MacOS/Godot --headless --path . res://tests/buffs_test.tscn   # 抽卡/叠加上限/各项数值生效/三选一时停
+/Applications/Godot.app/Contents/MacOS/Godot --headless --path . res://tests/l10n_test.tscn     # 中英表 key 对齐 / 切换持久化 / 各界面热刷新 / 选卡仍生效
 # 期望输出：SMOKE TEST: PASS
 
-# 窗口截图验收：合成输入并抓 9 张图到 /tmp/neon_rust_shots/
+# 窗口截图验收：合成输入并抓 12 张图到 /tmp/neon_rust_shots/（含 3 张中文对照）
 /Applications/Godot.app/Contents/MacOS/Godot --path . res://tests/capture.tscn
 ```
 

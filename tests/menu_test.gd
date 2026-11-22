@@ -11,6 +11,7 @@ var _failures: Array[String] = []
 
 
 func _ready() -> void:
+	L10n.set_locale("en", false)
 	_run()
 
 

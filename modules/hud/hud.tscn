@@ -364,9 +364,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -190.0
-offset_top = -136.0
+offset_top = -158.0
 offset_right = 190.0
-offset_bottom = 136.0
+offset_bottom = 158.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 9
@@ -403,6 +403,18 @@ theme_override_styles/hover = SubResource("btn_hover")
 theme_override_styles/focus = SubResource("btn_focus")
 theme_override_styles/pressed = SubResource("btn_pressed")
 text = "SOUND    ON"
+
+[node name="BtnLanguage" type="Button" parent="Root/OptionsLayer/Panel"]
+theme_override_colors/font_color = Color(0.62, 0.9, 1, 1)
+theme_override_colors/font_hover_color = Color(0.92, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("btn_normal")
+theme_override_styles/hover = SubResource("btn_hover")
+theme_override_styles/focus = SubResource("btn_focus")
+theme_override_styles/pressed = SubResource("btn_pressed")
+text = "LANGUAGE    ENGLISH"
 
 [node name="BtnBack" type="Button" parent="Root/OptionsLayer/Panel"]
 theme_override_colors/font_color = Color(0.62, 0.9, 1, 1)

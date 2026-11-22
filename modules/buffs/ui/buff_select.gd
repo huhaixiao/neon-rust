@@ -7,19 +7,28 @@ signal chosen(def: BuffDef)
 
 const CARD_SCENE := preload("res://modules/buffs/ui/buff_card.tscn")
 
+@onready var root: Control = $Root
 @onready var header: Label = $Root/Header
 @onready var sub: Label = $Root/Sub
+@onready var hint: Label = $Root/Hint
 @onready var cards_box: HBoxContainer = $Root/Cards
 
 var _choices: Array[BuffDef] = []
 var _closed := true
+var _wave := 0
+var _bonus := 0
+
+
+func _ready() -> void:
+	L10n.locale_changed.connect(_on_locale_changed)
 
 
 func offer(choices: Array[BuffDef], wave: int, bonus: int) -> void:
 	_choices = choices
+	_wave = wave
+	_bonus = bonus
 	_closed = false
-	header.text = "WAVE %02d CLEARED" % wave
-	sub.text = "+%d BONUS    //    PICK ONE MODULE" % bonus
+	_refresh_copy()
 	for child in cards_box.get_children():
 		cards_box.remove_child(child)
 		child.queue_free()
@@ -34,6 +43,24 @@ func offer(choices: Array[BuffDef], wave: int, bonus: int) -> void:
 	var first := cards_box.get_child(0) as Button
 	if first != null:
 		first.grab_focus()
+
+
+## Re-renders the copy and the open cards after a language switch.
+func _refresh_copy() -> void:
+	root.theme = L10n.ui_theme()
+	header.text = L10n.t("draft.header") % _wave
+	sub.text = L10n.t("draft.sub") % _bonus
+	hint.text = L10n.t("draft.hint")
+
+
+func _on_locale_changed(_code: String) -> void:
+	if not visible:
+		return
+	_refresh_copy()
+	for i in _choices.size():
+		var card := cards_box.get_child(i) as BuffCard
+		if card != null:
+			card.setup(_choices[i], i)
 
 
 func _on_card_pressed(index: int) -> void:

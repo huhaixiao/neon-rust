@@ -7,9 +7,6 @@ extends Resource
 enum Tag { OFFENSE, DEFENSE, MOBILITY, UTILITY }
 
 @export var id := ""
-@export var title := ""
-## Shown on the card; keep it short enough for two lines at 12px.
-@export var desc := ""
 @export var tag: Tag = Tag.OFFENSE
 @export var max_stacks := 3
 
@@ -26,26 +23,34 @@ enum Tag { OFFENSE, DEFENSE, MOBILITY, UTILITY }
 @export var bounty_pct := 0.0
 
 
-static func make(p_id: String, p_title: String, p_desc: String, p_tag: Tag, p_max: int) -> BuffDef:
+static func make(p_id: String, p_tag: Tag, p_max: int) -> BuffDef:
 	var def := BuffDef.new()
 	def.id = p_id
-	def.title = p_title
-	def.desc = p_desc
 	def.tag = p_tag
 	def.max_stacks = p_max
 	return def
 
 
+## Copy is keyed off the id, so a new buff only needs its numbers here and two
+## lines in each `strings_*.gd` table.
+func display_name() -> String:
+	return L10n.t("buff.%s.name" % id)
+
+
+func display_desc() -> String:
+	return L10n.t("buff.%s.desc" % id)
+
+
 func tag_label() -> String:
 	match tag:
 		Tag.OFFENSE:
-			return "OFFENSE"
+			return L10n.t("tag.offense")
 		Tag.DEFENSE:
-			return "DEFENSE"
+			return L10n.t("tag.defense")
 		Tag.MOBILITY:
-			return "MOBILITY"
+			return L10n.t("tag.mobility")
 		_:
-			return "UTILITY"
+			return L10n.t("tag.utility")
 
 
 func tag_color() -> Color:

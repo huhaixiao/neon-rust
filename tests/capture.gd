@@ -9,6 +9,8 @@ const SHOT_DIR := "/tmp/neon_rust_shots"
 
 
 func _ready() -> void:
+	# Docs shots stay in English even on a Chinese machine.
+	L10n.set_locale("en", false)
 	DirAccess.make_dir_recursive_absolute(SHOT_DIR)
 	# Watchdog: a stuck capture must not leave a dead window on screen forever.
 	get_tree().create_timer(45.0).timeout.connect(func() -> void:
@@ -23,6 +25,13 @@ func _run() -> void:
 	add_child(shell)
 	await get_tree().create_timer(0.6).timeout
 	await _shot("00_title")
+
+	# Second language pass, so the docs show the localization actually working.
+	L10n.set_locale("zh", false)
+	await get_tree().create_timer(0.2).timeout
+	await _shot("00b_title_zh")
+	L10n.set_locale("en", false)
+	await get_tree().create_timer(0.2).timeout
 
 	# Same path a player takes: press start on the title screen.
 	var start := InputEventAction.new()
@@ -81,6 +90,12 @@ func _run() -> void:
 	Game.wave_cleared.emit(2, 65)
 	await get_tree().create_timer(0.55).timeout
 	await _shot("05_draft")
+	# Same overlay in Chinese, to keep the localization honest in the docs.
+	L10n.set_locale("zh", false)
+	await get_tree().create_timer(0.25).timeout
+	await _shot("05b_draft_zh")
+	L10n.set_locale("en", false)
+	await get_tree().create_timer(0.25).timeout
 	var draft := shell.get_node("Stage").get_node("BuffSelect") as BuffSelect
 	(draft.cards_box.get_child(0) as Button).pressed.emit()
 	await get_tree().create_timer(0.55).timeout
@@ -95,6 +110,12 @@ func _run() -> void:
 	(shell.get_node("Stage").get_node("UI") as GameHud).btn_options.pressed.emit()
 	await get_tree().create_timer(0.3).timeout
 	await _shot("07_options")
+	# Options page in Chinese: the language row itself has to be readable.
+	L10n.set_locale("zh", false)
+	await get_tree().create_timer(0.35).timeout
+	await _shot("07b_options_zh")
+	L10n.set_locale("en", false)
+	await get_tree().create_timer(0.2).timeout
 
 	# Game-over panel with its buttons.
 	(shell.get_node("Stage").get_node("UI") as GameHud).hide_options()
