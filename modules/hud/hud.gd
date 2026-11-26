@@ -15,6 +15,8 @@ signal title_requested
 @onready var health_fill: ColorRect = $Root/HealthBack/HealthFill
 @onready var weapon_label: Label = $Root/WeaponLabel
 @onready var special_label: Label = $Root/SpecialLabel
+@onready var hero_label: Label = $Root/HeroLabel
+@onready var tree_label: Label = $Root/TreeLabel
 @onready var wave_label: Label = $Root/WaveLabel
 @onready var score_label: Label = $Root/ScoreLabel
 @onready var best_label: Label = $Root/BestLabel
@@ -57,11 +59,15 @@ var _banner_tween: Tween = null
 var _pad_mode := false
 var _debug_on := false
 var _recent_inputs: Array[String] = []
+## Which hero is currently drawn in the corner, so the label only rebuilds
+## when it actually changes (the stage wires the player after HUD _ready).
+var _hero_seen := ""
 
 
 func _ready() -> void:
 	Game.score_changed.connect(_on_score)
 	Game.health_changed.connect(_on_health)
+	Game.tree_health_changed.connect(_on_tree_health)
 	Game.wave_changed.connect(_on_wave)
 	Game.wave_cleared.connect(_on_wave_cleared)
 	Game.buff_changed.connect(_on_buff_changed)
@@ -89,6 +95,8 @@ func _process(_delta: float) -> void:
 	var player := Game.player as PlayerUnit
 	if player == null or player.dead or not Game.running:
 		return
+	if player.hero_id != _hero_seen:
+		_refresh_hero()
 	if player.overdrive_left > 0.0:
 		weapon_label.text = L10n.t("hud.overdrive") % player.overdrive_left
 		weapon_label.modulate = Color(1.0, 0.82, 0.35, 1.0)
@@ -241,6 +249,9 @@ func _refresh_locale() -> void:
 	_refresh_build()
 	_refresh_input_copy()
 	_on_health(Game.health, Game.max_health)
+	_on_tree_health(Game.tree_health, Game.max_tree_health)
+	_hero_seen = ""
+	_refresh_hero()
 	_reset_best()
 	_refresh_buffs()
 	if game_over.visible:
@@ -352,6 +363,25 @@ func _refresh_input_copy() -> void:
 
 func _on_score(value: int) -> void:
 	score_label.text = "%06d" % value
+
+
+func _on_tree_health(current: int, maximum: int) -> void:
+	tree_label.text = L10n.t("hud.tree") % [current, maximum]
+	var ratio := clampf(float(current) / float(maxi(1, maximum)), 0.0, 1.0)
+	if ratio < 0.3:
+		tree_label.modulate = Color(1.0, 0.42, 0.4, 1.0)
+	elif ratio < 0.6:
+		tree_label.modulate = Color(1.0, 0.82, 0.4, 1.0)
+	else:
+		tree_label.modulate = Color.WHITE
+
+
+func _refresh_hero() -> void:
+	var player := Game.player as PlayerUnit
+	if player == null:
+		return
+	hero_label.text = L10n.t("hud.hero") % [L10n.t("hero.%s.name" % player.hero_id), player.attack_range]
+	_hero_seen = player.hero_id
 
 
 func _on_health(current: int, maximum: int) -> void:

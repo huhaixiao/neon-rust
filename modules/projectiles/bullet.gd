@@ -14,6 +14,9 @@ var tint := Color(0.5, 1.0, 1.0)
 var life := 1.4
 ## Extra targets this round can pass through (PIERCING ROUNDS).
 var pierce := 0
+## Frost arrow payload: how hard and how long a hit creep is slowed.
+var slow := 0.0
+var slow_time := 0.0
 
 var _spent := false
 var _left := 0
@@ -23,7 +26,7 @@ var _hit_bodies: Array[Node] = []
 @onready var trail: Line2D = $Trail
 
 
-func setup(dir: Vector2, dmg: float, spd: float, is_friendly: bool, color: Color, extra_pierce := 0) -> void:
+func setup(dir: Vector2, dmg: float, spd: float, is_friendly: bool, color: Color, extra_pierce := 0, slow_amount := 0.0, slow_secs := 0.0) -> void:
 	direction = dir.normalized()
 	damage = dmg
 	speed = spd
@@ -31,6 +34,8 @@ func setup(dir: Vector2, dmg: float, spd: float, is_friendly: bool, color: Color
 	tint = color
 	pierce = extra_pierce
 	_left = extra_pierce
+	slow = slow_amount
+	slow_time = slow_secs
 
 
 func _ready() -> void:
@@ -66,6 +71,8 @@ func _on_body_entered(body: Node2D) -> void:
 		if enemy == null or _hit_bodies.has(body):
 			return
 		enemy.take_damage(damage, global_position)
+		if slow > 0.0:
+			enemy.apply_slow(slow, slow_time)
 		var player := Game.player as PlayerUnit
 		if player != null:
 			player.on_damage_dealt(damage)

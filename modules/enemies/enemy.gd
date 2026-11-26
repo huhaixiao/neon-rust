@@ -22,6 +22,15 @@ var radius := 17.0
 var body_scale := 0.82
 var base_color := Color(1.0, 0.25, 0.5)
 
+## Lane duty. A creep with `lane_active` walks toward `lane_end` (the World
+## Tree) and only breaks off to fight when the hero comes within `engage_range`.
+var lane_active := false
+var lane_end := Vector2.ZERO
+var engage_range := 250.0
+
+var slow_mult := 1.0
+var slow_left := 0.0
+
 var _hit_cd := 0.0
 var _shoot_cd := 0.0
 var _orbit := 1.0
@@ -97,22 +106,67 @@ func _physics_process(delta: float) -> void:
 		return
 	_hit_cd = maxf(0.0, _hit_cd - delta)
 	_shoot_cd = maxf(0.0, _shoot_cd - delta)
+	_tick_slow(delta)
 	if not Game.running:
 		return
 	var player := Game.player as PlayerUnit
-	if player == null or player.dead:
-		velocity = Vector2.ZERO
+	if player != null and not player.dead:
+		var to_player: Vector2 = player.global_position - global_position
+		var distance := to_player.length()
+		var direction := to_player.normalized() if distance > 0.001 else Vector2.RIGHT
+		# On lane duty the hero has to come to the creep; otherwise the whole
+		# wave would peel off and chase one target around the map.
+		if not lane_active or distance <= engage_range:
+			_steer(direction, distance, delta)
+			velocity += _separation()
+			position += velocity * delta
+			clamp_to_arena(radius + 4.0)
+			_face(delta, direction)
+			_touch_player(distance, player)
+			_try_shoot(distance, player)
+			return
+	if lane_active:
+		_march_lane(delta)
+
+
+## Walks the middle lane toward the tree. Going through `lane_end` counts as a
+## leak: the creep chips the tree and is removed, so a wave that gets past the
+## hero still costs something.
+func _march_lane(delta: float) -> void:
+	var to_end: Vector2 = lane_end - global_position
+	var distance := to_end.length()
+	if distance <= radius + 26.0:
+		_leak()
 		return
-	var to_player: Vector2 = player.global_position - global_position
-	var distance := to_player.length()
-	var direction := to_player.normalized() if distance > 0.001 else Vector2.RIGHT
-	_steer(direction, distance, delta)
+	var direction := to_end.normalized() if distance > 0.001 else Vector2.DOWN
+	velocity = velocity.lerp(direction * speed * slow_mult, minf(1.0, delta * 4.0))
 	velocity += _separation()
 	position += velocity * delta
 	clamp_to_arena(radius + 4.0)
 	_face(delta, direction)
-	_touch_player(distance, player)
-	_try_shoot(distance, player)
+
+
+func _leak() -> void:
+	Game.damage_tree(int(round(contact_damage * 1.6)))
+	Fx.burst(global_position, Color(1.0, 0.6, 0.3), 16, 260.0, 0.8)
+	Fx.flash(global_position, Color(1.0, 0.55, 0.35))
+	Fx.sfx(Fx.SFX_HIT, -4.0, 0.8)
+	queue_free()
+
+
+func apply_slow(factor: float, duration: float) -> void:
+	# Strongest slow wins and the timer refreshes on every frost arrow; a
+	# creep never stacks itself down to a standstill.
+	slow_mult = minf(slow_mult, clampf(1.0 - factor, 0.15, 1.0))
+	slow_left = maxf(slow_left, duration)
+
+
+func _tick_slow(delta: float) -> void:
+	if slow_left <= 0.0:
+		return
+	slow_left = maxf(0.0, slow_left - delta)
+	if slow_left <= 0.0:
+		slow_mult = 1.0
 
 
 func _steer(direction: Vector2, distance: float, delta: float) -> void:

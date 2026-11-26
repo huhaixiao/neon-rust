@@ -16,10 +16,20 @@ const BULLET_SCENE := preload("res://modules/projectiles/bullet.tscn")
 @export var special_cooldown := 8.0
 @export var special_damage := 55.0
 @export var special_radius := 240.0
+## Which hero this unit is playing. Stats come from `HeroCatalog`, not from
+## the exports above, so a hero swap is one string.
+@export var hero_id := HeroCatalog.DROW
+@export var auto_aim := true
 
+var attack_range := 470.0
 var health := 100
 var aim := Vector2.RIGHT
 var overdrive_left := 0.0
+## Closest enemy inside `attack_range`, refreshed every frame in auto mode.
+var target: Enemy = null
+var bullet_color := Color(0.45, 1.0, 1.0)
+var _slow_factor := 0.0
+var _slow_time := 0.0
 
 var _dashing := false
 var _dash_left := 0.0
@@ -49,9 +59,27 @@ func _ready() -> void:
 	Game.player = self
 	if not Game.enemy_killed.is_connected(_on_enemy_killed):
 		Game.enemy_killed.connect(_on_enemy_killed)
+	apply_hero(HeroCatalog.get_def(hero_id))
 	health = max_health
 	Game.set_health(health, max_health)
 	muzzle_flash.visible = false
+
+
+## Copies the hero sheet onto the player unit. Everything that makes 小黑 feel
+## different from the next hero goes through here.
+func apply_hero(def: HeroDef) -> void:
+	hero_id = def.id
+	attack_range = def.attack_range
+	bullet_damage = def.damage
+	fire_interval = def.attack_interval
+	bullet_speed = def.bullet_speed
+	move_speed = def.move_speed
+	max_health = def.health
+	bullet_color = def.bullet_color
+	_slow_factor = def.slow_factor
+	_slow_time = def.slow_time
+	auto_aim = def.auto_attack
+	health = max_health
 
 
 func _process(delta: float) -> void:
@@ -100,6 +128,17 @@ func _tick(delta: float) -> void:
 
 
 func _update_aim() -> void:
+	# Lane mode: no mouse, no stick. The hero swings toward the closest creep
+	# in range and keeps the last heading when the lane is empty, so the
+	# sprite never snaps back to a stale direction.
+	if auto_aim:
+		target = _nearest_enemy(attack_range)
+		if target == null:
+			return
+		var to_target: Vector2 = target.global_position - global_position
+		if to_target.length() > 1.0:
+			aim = to_target.normalized()
+		return
 	var stick := Vector2(
 		Input.get_joy_axis(0, JOY_AXIS_RIGHT_X),
 		Input.get_joy_axis(0, JOY_AXIS_RIGHT_Y)
@@ -152,6 +191,17 @@ func _try_dash() -> void:
 
 func _try_fire() -> void:
 	if Game.bullets_root == null or _fire_cd > 0.0:
+		return
+	# Auto mode fires by itself as long as something is inside the hero's
+	# range - no trigger to hold, and no wasted shots into empty lane.
+	if auto_aim:
+		if target == null or not is_instance_valid(target) or target.dead:
+			return
+		if global_position.distance_to(target.global_position) > attack_range + 12.0:
+			return
+		_shoot()
+		var auto_rate := fire_interval / Game.buff_fire_rate_mult
+		_fire_cd = auto_rate * (0.62 if overdrive_left > 0.0 else 1.0)
 		return
 	if not Input.is_action_pressed("fire"):
 		return
@@ -304,7 +354,7 @@ func _shoot() -> void:
 
 func _spawn_bullet(direction: Vector2, damage: float) -> void:
 	var bullet := BULLET_SCENE.instantiate()
-	bullet.setup(direction, damage, bullet_speed, true, Color(0.45, 1.0, 1.0), Game.buff_pierce)
+	bullet.setup(direction, damage, bullet_speed, true, bullet_color, Game.buff_pierce, _slow_factor, _slow_time)
 	bullet.position = muzzle.global_position
 	Game.bullets_root.add_child(bullet)
 

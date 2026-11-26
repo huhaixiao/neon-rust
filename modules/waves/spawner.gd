@@ -6,7 +6,16 @@ extends Node2D
 const ENEMY_SCENE := preload("res://modules/enemies/enemy.tscn")
 const PICKUP_SCENE := preload("res://modules/pickups/pickup.tscn")
 
+## One middle lane for now: creeps enter at the top of the map and walk down
+## to the World Tree. Side lanes stay as data for later (see `docs/`).
+const LANE_X := 800.0
+const LANE_START_Y := 110.0
+const LANE_END := Vector2(800.0, 858.0)
+## How close the hero has to get before a lane creep stops marching and fights.
+const ENGAGE_RANGE := 250.0
+
 var wave := 0
+var lane_end := LANE_END
 
 var _alive: Array[Enemy] = []
 var _queue: Array[int] = []
@@ -45,23 +54,25 @@ func _process(delta: float) -> void:
 func _begin_wave(index: int) -> void:
 	wave = index
 	Game.set_wave(index)
-	var total := mini(6 + index * 2, 44)
+	# One lane means one wave budget, not four edges' worth. Count keeps the
+	# ramp readable instead of drowning a single lane in creeps.
+	var total := mini(5 + index * 2, 32)
 	var spitters := 0
 	var brutes := 0
-	if index >= 2:
-		spitters = maxi(1, int(index * 0.7))
 	if index >= 3:
+		spitters = maxi(1, int(index * 0.5))
+	if index >= 4:
 		brutes = maxi(1, int(index * 0.25))
-	var chasers := maxi(1, total - spitters - brutes)
+	var melee := maxi(1, total - spitters - brutes)
 	_queue.clear()
-	for i in chasers:
+	for i in melee:
 		_queue.append(Enemy.Kind.CHASER)
 	for i in spitters:
 		_queue.append(Enemy.Kind.SPITTER)
 	for i in brutes:
 		_queue.append(Enemy.Kind.BRUTE)
 	_queue.shuffle()
-	_spawn_interval = clampf(0.95 - 0.04 * index, 0.2, 0.95)
+	_spawn_interval = clampf(0.95 - 0.04 * index, 0.25, 0.95)
 	_spawn_cd = 0.3
 	Fx.sfx(Fx.SFX_WAVE, -2.0, 1.0)
 
@@ -72,6 +83,9 @@ func _spawn_one() -> void:
 	var kind: int = _queue.pop_back()
 	var enemy := ENEMY_SCENE.instantiate() as Enemy
 	enemy.configure(kind, wave)
+	enemy.lane_active = true
+	enemy.lane_end = lane_end
+	enemy.engage_range = ENGAGE_RANGE
 	enemy.position = _spawn_point()
 	enemy.died.connect(_on_enemy_died)
 	Game.enemies_root.add_child(enemy)
@@ -80,23 +94,10 @@ func _spawn_one() -> void:
 
 
 func _spawn_point() -> Vector2:
-	var bounds := Game.arena.grow(-40.0)
-	var player := Game.player as PlayerUnit
-	var point := bounds.get_center()
-	for attempt in 8:
-		var side := randi_range(0, 3)
-		match side:
-			0:
-				point = Vector2(randf_range(bounds.position.x, bounds.end.x), bounds.position.y)
-			1:
-				point = Vector2(randf_range(bounds.position.x, bounds.end.x), bounds.end.y)
-			2:
-				point = Vector2(bounds.position.x, randf_range(bounds.position.y, bounds.end.y))
-			_:
-				point = Vector2(bounds.end.x, randf_range(bounds.position.y, bounds.end.y))
-		if player == null or point.distance_to(player.global_position) > 300.0:
-			break
-	return point
+	# Single middle lane: creeps enter at the top and walk down to the tree.
+	# Lateral jitter keeps them from stacking into one line the separation
+	# pass has to untangle.
+	return Vector2(LANE_X + randf_range(-30.0, 30.0), LANE_START_Y + randf_range(-12.0, 12.0))
 
 
 func _prune() -> void:

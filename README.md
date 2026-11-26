@@ -3,9 +3,20 @@
 俯视角双摇杆射击（Twin-stick shooter），Godot 4.7 / Forward+ / 2D 渲染，1280×720。
 你驾驶一台霓虹涂装的拦截机，在一片锈蚀的废弃竞技场里撑过一波接一波的无人机群。
 
+**当前版本已改成中路兵线模式**：只有一条中路，兵从上方沿兵线走下来打你的世界之树；英雄是 `小黑`（寒霜射手），自动索敌、自动开火。左侧仍是原来的竞技场玩法底子，只是敌人不再从四面围上来。
+
 ![首页](docs/screenshots/title.png)
 
 ![战斗画面](docs/screenshots/combat.png)
+
+## 中路兵线 / 世界之树
+
+- **一条中路**：`x = 800`，兵从上沿（`y = 110`）出现，沿兵线走到世界之树（`800, 858`）。只有你走进 250px 内，兵才会停下开打；否则它只管往前推。
+- **世界之树**：初始 `220` 点血量，兵走到树前会扣一次血然后消失。树血量归零整局结束——真正的失败条件是丢树，而不是你被打掉。
+- **小黑（寒霜射手）**：射程 `470`、伤害 `26`、攻击间隔 `0.58s`，冰箭命中后减速 40% 持续 1.4 秒。**不需要瞄准也不需要按键**：射程内最近的兵会被自动锁定并开火，射程外一枪不发。
+- 英雄数值全部在 `modules/heroes/data/hero_catalog.gd` 的 `HeroDef` 里，加第二个英雄只加一个分支 + 两组文案。
+- 相机缩到 `0.85`，把整条兵线和树一起装进 1280×720，分辨率保持不变。
+
 
 ## 运行
 
@@ -26,8 +37,7 @@ open -a Godot /Users/huhaixiao/github/neon-rust
 | 动作 | 键盘 / 鼠标 | 手柄 |
 | --- | --- | --- |
 | 移动（左摇杆） | `W` `A` `S` `D` / 方向键 | 左摇杆 `JOY_AXIS_LEFT_*` |
-| 瞄准（右摇杆） | 鼠标位置 | 右摇杆 |
-| 开火 | 鼠标左键（按住连发） | `X`（或 `RB` / `RT` 轴） |
+| 攻击（自动） | 不用按，射程内自动开火 | 同左 |
 | 特殊攻击 | `E` / 鼠标右键 | `Y` |
 | 冲刺 | `Space` | `B` / `LB` |
 | 暂停 | `Esc` | `START` / `BACK`（左右两个菜单键都行） |
@@ -37,6 +47,8 @@ open -a Godot /Users/huhaixiao/github/neon-rust
 | 结算后：回首页 | `Esc` | `START` / `BACK` |
 | 静音 | `M` | — |
 | 全屏 | `F11` | — |
+
+`auto_aim` 关掉时（`PlayerUnit.auto_aim = false`）会退回原来的双摇杆手动瞄准：鼠标或右摇杆控方向、按住左键 / `X` 开火。中路版本默认开着自动攻击，准星也会隐藏。
 
 HUD 会检测是否接了手柄：接了就把提示切成手柄说法（`X FIRE` / `Y SPECIAL` / `B DASH` / `START OR ESC TO RESUME` / `A REDEPLOY / START TITLE`），没接就显示键鼠说法。插拔手柄会即时切换。
 
@@ -231,15 +243,21 @@ python3 tools/png_sample.py <png> x,y   # 不装 PIL 也能查像素，用于核
 /Applications/Godot.app/Contents/MacOS/Godot --headless --path . res://tests/pause_test.tscn   # 暂停时玩法必须冻结、输入层仍活着
 /Applications/Godot.app/Contents/MacOS/Godot --headless --path . res://tests/buffs_test.tscn   # 抽卡/叠加上限/吸血/哨戒机/奇点升级/三选一时停
 /Applications/Godot.app/Contents/MacOS/Godot --headless --path . res://tests/l10n_test.tscn     # 中英表 key 对齐 / 切换持久化 / 各界面热刷新 / 选卡仍生效
+/Applications/Godot.app/Contents/MacOS/Godot --headless --path . res://tests/lane_test.tscn     # 中路兵线 / 自动索敌 / 冰箭减速 / 漏兵扣树血
 # 期望输出：SMOKE TEST: PASS
 
 # 窗口截图验收：合成输入并抓 16 张图到 /tmp/neon_rust_shots/（含 5 张中文对照）
 /Applications/Godot.app/Contents/MacOS/Godot --path . res://tests/capture.tscn
+# 中路模式的 4 张图：兵线入口 / 交战 / 后期 / 中文
+/Applications/Godot.app/Contents/MacOS/Godot --path . res://tests/capture_lane.tscn
 ```
 
 ## 已知限制 / 下一步
 
 - 音效是纯合成占位，没有音乐轨；`Fx` 里已经留好音效池，换成真素材只需替换 `modules/global/assets/audio/sfx/`。
+- 只有中路一条兵线，上下路和野区还没做；`WaveDirector.LANE_END` 变成数组、再复制一份 `LaneVisual` 就能扩线。
+- 英雄暂时沿用原来的飞船贴图（小黑还没有专属立绘），`modules/heroes/assets/heroes/drow/` 目录已留好，换图不用改代码。
+- 世界之树只挨打，还不能反击；防御塔还没做。
 - 目前普通攻击与特殊攻击共用一套武器底座（脉冲 / 奇点）；成长靠波次 buff，没有商店或跨局解锁。
 - 场地是单张 1600×1000 底图，没有可破坏掩体或视线遮挡。
 - `tools/generate_assets.py` 仍会顺带生成一张 `floor_tile.png`（早期平铺方案的遗留，当前场景不使用），可以删掉那段代码。

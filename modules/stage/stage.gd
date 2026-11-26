@@ -47,7 +47,7 @@ func _freeze_gameplay_while_paused() -> void:
 	# PROCESS_MODE_INHERIT propagates from the parent, so this node being
 	# ALWAYS would drag every gameplay child along with it. Re-arm the
 	# gameplay subtrees as PAUSABLE; only the input/HUD layer stays awake.
-	for path in ["Player", "Enemies", "Bullets", "Pickups", "FX", "Spawner", "Camera2D"]:
+	for path in ["Player", "Enemies", "Bullets", "Pickups", "FX", "Spawner", "Camera2D", "WorldTree"]:
 		var node := get_node_or_null(path)
 		if node != null:
 			node.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -64,9 +64,11 @@ func _setup_camera() -> void:
 func _process(_delta: float) -> void:
 	crosshair.global_position = get_global_mouse_position()
 	# With a pad plugged in the reticle would just sit where the cursor was,
-	# so the aim line from the stick takes over instead.
+	# so the aim line from the stick takes over instead. A lane hero aims
+	# itself, so there is nothing for a reticle to show either.
 	var pad_aim := not Input.get_connected_joypads().is_empty()
-	crosshair.visible = Game.running and not _paused and not pad_aim
+	var self_aim := Game.player is PlayerUnit and (Game.player as PlayerUnit).auto_aim
+	crosshair.visible = Game.running and not _paused and not pad_aim and not self_aim
 
 
 func _unhandled_input(event: InputEvent) -> void:

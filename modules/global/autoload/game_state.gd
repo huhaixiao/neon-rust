@@ -6,6 +6,7 @@ signal score_changed(value: int)
 signal wave_changed(value: int)
 signal wave_cleared(wave_index: int, bonus: int)
 signal health_changed(current: int, maximum: int)
+signal tree_health_changed(current: int, maximum: int)
 signal overdrive_changed(active: bool, seconds: float)
 signal run_started
 signal run_ended(final_score: int, best_score: int)
@@ -25,6 +26,10 @@ var score := 0
 var wave := 0
 var health := 100
 var max_health := 100
+## The World Tree is the actual lose condition in lane mode. The hero going
+## down still ends the run, but leaking waves is what grinds you out.
+var tree_health := 220
+var max_tree_health := 220
 var running := false
 
 ## Screen shake request, consumed and decayed by the camera rig.
@@ -38,6 +43,7 @@ var pickups_root: Node2D = null
 var fx_root: Node2D = null
 var spawner: Node = null
 var camera: Camera2D = null
+var tree: Node2D = null
 
 # --- run buffs -------------------------------------------------------------
 var buffs: Dictionary = {}          # id -> stacks
@@ -68,11 +74,27 @@ func reset_run() -> void:
 	score = 0
 	wave = 0
 	health = max_health
+	tree_health = max_tree_health
 	running = true
 	score_changed.emit(score)
 	health_changed.emit(health, max_health)
+	tree_health_changed.emit(tree_health, max_tree_health)
 	overdrive_changed.emit(false, 0.0)
 	run_started.emit()
+
+
+## Chipped by a creep that walked the lane. Reaching zero loses the run: the
+## tree is what the player is actually defending.
+func damage_tree(amount: int) -> void:
+	if not running or amount <= 0:
+		return
+	tree_health = maxi(0, tree_health - amount)
+	tree_health_changed.emit(tree_health, max_tree_health)
+	if is_instance_valid(tree):
+		tree.on_hit()
+	add_shake(0.5)
+	if tree_health <= 0:
+		end_run()
 
 
 ## Dropped by the app shell whenever a screen is torn down, so stale references
@@ -85,6 +107,7 @@ func clear_scene_refs() -> void:
 	fx_root = null
 	spawner = null
 	camera = null
+	tree = null
 
 
 func roll_buffs(count: int) -> Array[BuffDef]:

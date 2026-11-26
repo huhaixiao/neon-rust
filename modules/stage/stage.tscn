@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://modules/stage/stage.gd" id="1_stage"]
 [ext_resource type="Texture2D" path="res://modules/global/assets/sprites/world/arena_floor.png" id="2_floor"]
@@ -7,6 +7,8 @@
 [ext_resource type="Texture2D" path="res://modules/global/assets/sprites/ui/crosshair.png" id="5_crosshair"]
 [ext_resource type="Script" path="res://modules/camera/camera_rig.gd" id="6_camera"]
 [ext_resource type="Script" path="res://modules/waves/spawner.gd" id="7_spawner"]
+[ext_resource type="PackedScene" path="res://modules/towers/world_tree.tscn" id="8_tree"]
+[ext_resource type="Script" path="res://modules/lanes/components/lane_visual.gd" id="9_lane"]
 
 [node name="Stage" type="Node2D"]
 script = ExtResource("1_stage")
@@ -16,12 +18,19 @@ z_index = 0
 texture = ExtResource("2_floor")
 centered = false
 
+[node name="Lane" type="Node2D" parent="."]
+script = ExtResource("9_lane")
+
 [node name="Pickups" type="Node2D" parent="."]
 
 [node name="Enemies" type="Node2D" parent="."]
 
 [node name="Player" parent="." instance=ExtResource("3_player")]
-position = Vector2(800, 500)
+position = Vector2(800, 620)
+
+[node name="WorldTree" parent="." instance=ExtResource("8_tree")]
+position = Vector2(800, 858)
+z_index = 2
 
 [node name="Bullets" type="Node2D" parent="."]
 
@@ -31,6 +40,7 @@ position = Vector2(800, 500)
 script = ExtResource("7_spawner")
 
 [node name="Camera2D" type="Camera2D" parent="."]
+zoom = Vector2(0.85, 0.85)
 script = ExtResource("6_camera")
 
 [node name="Crosshair" type="Sprite2D" parent="."]
