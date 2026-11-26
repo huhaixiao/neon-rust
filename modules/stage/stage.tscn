@@ -26,10 +26,10 @@ script = ExtResource("9_lane")
 [node name="Enemies" type="Node2D" parent="."]
 
 [node name="Player" parent="." instance=ExtResource("3_player")]
-position = Vector2(800, 620)
+position = Vector2(392, 706)
 
 [node name="WorldTree" parent="." instance=ExtResource("8_tree")]
-position = Vector2(800, 858)
+position = Vector2(190, 800)
 z_index = 2
 
 [node name="Bullets" type="Node2D" parent="."]

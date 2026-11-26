@@ -6,15 +6,12 @@ extends Node2D
 ##   - 没有间隔: 一波清空, 下一波立刻从上方走进中路
 ##   - 小兵按 DotA1 的 7:30 周期升级（每 15 波一次, 见 CreepCatalog）
 ##
-## One middle lane for now: creeps enter at the top of the map and walk down
-## to the World Tree. Side lanes stay as data for later (see `docs/`).
+## One middle lane for now: creeps enter at the top-right corner and walk
+## down-left to the World Tree. The whole line lives in `LaneSpec`.
 
 const ENEMY_SCENE := preload("res://modules/enemies/enemy.tscn")
 const PICKUP_SCENE := preload("res://modules/pickups/pickup.tscn")
 
-const LANE_X := 800.0
-const LANE_START_Y := 110.0
-const LANE_END := Vector2(800.0, 858.0)
 ## How close the hero has to get before a lane creep stops marching and fights.
 const ENGAGE_RANGE := 250.0
 
@@ -28,7 +25,7 @@ const SPAWN_INTERVAL := 0.35
 const FIRST_START_DELAY := 1.2
 
 var wave := 0
-var lane_end := LANE_END
+var lane_end := LaneSpec.TREE
 
 var _alive: Array[Enemy] = []
 var _queue: Array[int] = []
@@ -102,10 +99,12 @@ func _spawn_one() -> void:
 
 
 func _spawn_point() -> Vector2:
-	# Single middle lane: creeps enter at the top and walk down to the tree.
-	# Lateral jitter keeps them from stacking into one line the separation
-	# pass has to untangle.
-	return Vector2(LANE_X + randf_range(-30.0, 30.0), LANE_START_Y + randf_range(-12.0, 12.0))
+	# Single middle lane: creeps enter just inside the top-right corner and walk
+	# down-left. Jitter goes along the lane's normal and a little way up-lane,
+	# so a wave arrives as a loose cluster instead of one stacked point.
+	var dir := LaneSpec.direction()
+	var side := LaneSpec.normal()
+	return LaneSpec.START + side * randf_range(-62.0, 62.0) + dir * randf_range(-10.0, 40.0)
 
 
 func _prune() -> void:

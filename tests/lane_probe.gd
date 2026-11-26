@@ -27,9 +27,9 @@ func _ready() -> void:
 		var creep := ENEMY_SCENE.instantiate() as Enemy
 		creep.configure(kinds[i], 1)
 		creep.lane_active = true
-		creep.lane_end = Vector2(800.0, 858.0)
+		creep.lane_end = LaneSpec.TREE
 		creep.engage_range = 250.0
-		creep.position = Vector2(800.0 + (i - 1.5) * 34.0, 110.0)
+		creep.position = LaneSpec.START + LaneSpec.normal() * ((i - 1.5) * 34.0)
 		Game.enemies_root.add_child(creep)
 	await get_tree().physics_frame
 

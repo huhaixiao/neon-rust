@@ -105,14 +105,22 @@ func _run() -> void:
 		_fail("spawner was not wired")
 	else:
 		spawner.set_process(false)
-		if spawner.lane_end.distance_to(Vector2(800.0, 858.0)) > 0.01:
+		if spawner.lane_end.distance_to(LaneSpec.TREE) > 0.01:
 			_fail("lane should end at the tree, got %s" % str(spawner.lane_end))
+		# Creeps enter at the top-right corner and stay on the lane corridor.
 		for i in 12:
 			var point: Vector2 = spawner._spawn_point()
-			if absf(point.x - 800.0) > 40.0:
-				_fail("creep spawned off the middle lane at x=%.1f" % point.x)
-			if point.y > 140.0:
-				_fail("creep should enter from the top of the lane, y=%.1f" % point.y)
+			if point.distance_to(LaneSpec.START) > 120.0:
+				_fail("creep did not spawn at the Dire entry, got %s" % str(point))
+			if absf(LaneSpec.lateral(point)) > 90.0:
+				_fail("creep spawned off the lane corridor, lateral = %.1f" % LaneSpec.lateral(point))
+		# Defend the bottom-left: the tree and hero both live there.
+		if LaneSpec.TREE.x > 300.0 or LaneSpec.TREE.y < 700.0:
+			_fail("the World Tree should sit in the bottom-left corner, got %s" % str(LaneSpec.TREE))
+		if LaneSpec.START.x < 1200.0 or LaneSpec.START.y > 300.0:
+			_fail("creeps should enter from the top-right corner, got %s" % str(LaneSpec.START))
+		if player.global_position.distance_to(LaneSpec.hero_spawn()) > 6.0:
+			_fail("the hero should spawn in front of the tree, got %s" % str(player.global_position))
 
 		# --- DotA1 wave layout: 3 melee + 1 ranged, siege every 7th ------
 		var plain := spawner.composition(1)
@@ -151,7 +159,7 @@ func _run() -> void:
 	var near := enemy_scene.instantiate() as Enemy
 	near.configure(Enemy.Kind.CHASER, 1)
 	near.lane_active = true
-	near.lane_end = Vector2(800.0, 858.0)
+	near.lane_end = LaneSpec.TREE
 	near.engage_range = 2000.0
 	near.position = player.global_position + Vector2(210.0, 0.0)
 	Game.enemies_root.add_child(near)
@@ -208,10 +216,10 @@ func _run() -> void:
 	var leaker := enemy_scene.instantiate() as Enemy
 	leaker.configure(Enemy.Kind.CHASER, 1)
 	leaker.lane_active = true
-	leaker.lane_end = Vector2(800.0, 858.0)
+	leaker.lane_end = LaneSpec.TREE
 	# Parked close to the hero, so keep it from switching to a hero fight.
 	leaker.engage_range = 10.0
-	leaker.position = Vector2(800.0, 800.0)
+	leaker.position = LaneSpec.TREE - LaneSpec.direction() * 70.0
 	Game.enemies_root.add_child(leaker)
 	for i in 40:
 		await get_tree().physics_frame
