@@ -128,12 +128,15 @@ func _finish_wave() -> void:
 func _on_enemy_died(kind: int, at: Vector2) -> void:
 	# Deaths arrive from inside a physics callback (bullet hits), so anything
 	# that adds colliders has to wait for the physics step to finish.
-	var values := {
-		Enemy.Kind.CHASER: 43,
-		Enemy.Kind.BRUTE: 73,
-		Enemy.Kind.SPITTER: 48,
-	}
-	Game.add_score(int(values.get(kind, 43)))
+	# Bounty and XP come from the same DotA1 sheet the creep's stats did.
+	var creep_id := CreepCatalog.MELEE
+	match kind:
+		Enemy.Kind.BRUTE:
+			creep_id = CreepCatalog.SIEGE
+		Enemy.Kind.SPITTER:
+			creep_id = CreepCatalog.RANGED
+	var def := CreepCatalog.get_def(creep_id)
+	Game.register_kill(def.bounty_gold, def.bounty_xp)
 	Game.enemy_killed.emit(kind, at)
 	if not is_inside_tree():
 		return

@@ -45,6 +45,10 @@ var engage_range := 250.0
 var slow_mult := 1.0
 var slow_left := 0.0
 
+var art: CreepArt = null
+var hp_bar: CreepHealthBar = null
+var art_kind := 0
+
 var _attack_cd := 0.0
 var _at_tree := false
 var _orbit := 1.0
@@ -83,12 +87,38 @@ func configure(kind_value, wave_index: int) -> void:
 	_orbit = 1.0 if randf() < 0.5 else -1.0
 
 
+## Dire-side palette: the creeps are the enemy lane, so they all read red even
+## though the hit sparks keep each role's colour.
+const DIRE_MELEE := Color(0.66, 0.20, 0.20)
+const DIRE_RANGED := Color(0.52, 0.20, 0.40)
+const DIRE_SIEGE := Color(0.46, 0.26, 0.18)
+
+
 func _ready() -> void:
 	add_to_group("enemies")
 	_apply_look()
-	sprite.scale = Vector2.ONE * 0.15
+	sprite.visible = false
+	art = CreepArt.new()
+	add_child(art)
+	art.build(art_kind, _team_color())
+	hp_bar = CreepHealthBar.new()
+	hp_bar.top_level = true
+	add_child(hp_bar)
+	art.scale = Vector2.ONE * 0.15
 	var pop := create_tween()
-	pop.tween_property(sprite, "scale", Vector2(body_scale, body_scale), 0.24).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	# Drawn art is authored around a ~30px figure; scale it up so a lane creep
+	# reads as a body at the 0.85 camera zoom instead of a speck.
+	pop.tween_property(art, "scale", Vector2.ONE * (body_scale * 1.7), 0.24).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _team_color() -> Color:
+	match art_kind:
+		2:
+			return DIRE_SIEGE
+		1:
+			return DIRE_RANGED
+		_:
+			return DIRE_MELEE
 
 
 func _apply_look() -> void:
@@ -100,6 +130,7 @@ func _apply_look() -> void:
 		texture = TEX_SPITTER
 	sprite.texture = texture
 	sprite.scale = Vector2(body_scale, body_scale)
+	art_kind = 1 if look == 2 else (2 if look == 1 else 0)
 	var shape := hitbox.shape.duplicate() as CircleShape2D
 	if shape != null:
 		shape.radius = radius
@@ -108,7 +139,12 @@ func _apply_look() -> void:
 
 func _process(delta: float) -> void:
 	tick_hit_flash(delta)
-	sprite.modulate = Color(2.0, 2.0, 2.0, 1.0) if flash_left > 0.0 else Color.WHITE
+	if art != null:
+		art.modulate = Color(2.0, 2.0, 2.0, 1.0) if flash_left > 0.0 else Color.WHITE
+	if hp_bar != null:
+		# Top-level, so it has to be parked over the body every frame.
+		hp_bar.global_position = global_position + Vector2(0.0, -radius - 22.0)
+		hp_bar.set_ratio(health / maxf(1.0, health_max))
 
 
 func _physics_process(delta: float) -> void:

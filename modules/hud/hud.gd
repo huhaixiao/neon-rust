@@ -55,6 +55,7 @@ signal title_requested
 @onready var btn_redeploy: Button = $Root/GameOver/Actions/BtnRedeploy
 @onready var btn_title: Button = $Root/GameOver/Actions/BtnTitle
 
+var _panel: DotaPanel = null
 var _banner_tween: Tween = null
 var _pad_mode := false
 var _debug_on := false
@@ -73,7 +74,9 @@ func _ready() -> void:
 	Game.buff_changed.connect(_on_buff_changed)
 	Game.run_started.connect(_on_run_started)
 	Game.run_ended.connect(_on_run_ended)
+	Game.announced.connect(_on_announced)
 	L10n.locale_changed.connect(_on_locale_changed)
+	_build_dota_panel()
 	_on_score(Game.score)
 	_on_health(Game.health, Game.max_health)
 	_reset_best()
@@ -89,6 +92,30 @@ func _ready() -> void:
 	build_layer.visible = false
 	_wire_menu()
 	_refresh_locale()
+
+
+## Bottom bar: portrait, HP/XP, gold, six item slots, three passive skills.
+func _build_dota_panel() -> void:
+	_panel = DotaPanel.new()
+	root.add_child(_panel)
+	_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# The control hint used to sit on the very bottom edge; lift it clear of
+	# the bar so the two never overlap.
+	control_hint.offset_top -= DotaPanel.BAR_H
+	control_hint.offset_bottom -= DotaPanel.BAR_H
+	# The bottom bar owns HP / hero name now; the old neon corner read-outs
+	# would just repeat it.
+	hull_label.visible = false
+	hero_label.visible = false
+	var health_back := root.get_node_or_null("HealthBack") as Control
+	if health_back != null:
+		health_back.visible = false
+
+
+func _on_announced(title: String, subtitle: String) -> void:
+	# Bought items and level ups share the wave banner; the run must not stop
+	# for a toast, so it fades on the normal timer.
+	_announce(title, subtitle)
 
 
 func _process(_delta: float) -> void:

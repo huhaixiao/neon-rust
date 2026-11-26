@@ -4,6 +4,11 @@ extends ShipBody
 ## hold-to-fire, and a dash with invulnerability frames.
 
 const BULLET_SCENE := preload("res://modules/projectiles/bullet.tscn")
+const ARROW_SCENE := preload("res://modules/projectiles/arrow.tscn")
+## How long the bow wind-up pins the hero in place after a manual shot. This is
+## the DotA1 attack animation: you root yourself for the shot, you do not kite
+## mid-draw.
+const ROOT_TIME := 0.42
 
 @export var move_speed := 430.0
 @export var dash_speed := 1500.0
@@ -22,6 +27,11 @@ const BULLET_SCENE := preload("res://modules/projectiles/bullet.tscn")
 @export var auto_aim := true
 
 var attack_range := 470.0
+## Gold/XP/items/passives. Kills feed it, it feeds `refresh_stats()`.
+var progress: HeroProgress = null
+## Force staff: an instant shove along the aim, on its own cooldown.
+var force_push := 300.0
+var force_cooldown := 20.0
 var armor := 0.0
 var health := 100
 var aim := Vector2.RIGHT
@@ -33,6 +43,11 @@ var _slow_factor := 0.0
 var _slow_time := 0.0
 var _damage_min := 0.0
 var _damage_max := 0.0
+## The hero sheet before items and passives, so a recompute never compounds.
+var _base := {}
+var _root_left := 0.0
+var _force_cd := 0.0
+var _art: HeroArt = null
 
 var _dashing := false
 var _dash_left := 0.0
@@ -65,6 +80,17 @@ func _ready() -> void:
 	if not Game.enemy_killed.is_connected(_on_enemy_killed):
 		Game.enemy_killed.connect(_on_enemy_killed)
 	apply_hero(HeroCatalog.get_def(hero_id))
+	progress = HeroProgress.new()
+	progress.changed.connect(refresh_stats)
+	progress.item_purchased.connect(_on_item_purchased)
+	progress.leveled_up.connect(_on_leveled_up)
+	_art = HeroArt.new()
+	# Drawn art is authored around a ~30px figure; the sheet silhouette should
+	# sit above the creeps at the 0.85 camera zoom.
+	_art.scale = Vector2(1.35, 1.35)
+	add_child(_art)
+	body.visible = false
+	refresh_stats()
 	health = max_health
 	Game.set_health(health, max_health)
 	muzzle_flash.visible = false
@@ -87,7 +113,61 @@ func apply_hero(def: HeroDef) -> void:
 	_slow_factor = def.slow_factor
 	_slow_time = def.slow_time
 	auto_aim = def.auto_attack
+	_base = {
+		"damage_min": def.damage_min,
+		"damage_max": def.damage_max,
+		"damage": def.damage,
+		"fire_interval": def.attack_interval,
+		"armor": def.armor,
+		"max_health": def.health,
+		"move_speed": def.move_speed,
+		"slow": def.slow_factor,
+	}
 	health = max_health
+
+
+## Folds items and passive levels onto the base hero sheet. Called on every
+## purchase and every level, so there is one place that owns the numbers.
+func refresh_stats() -> void:
+	if progress == null or _base.is_empty():
+		return
+	var bonus := progress.bonus()
+	var dmg_min: float = float(_base.damage_min) * (1.0 + float(bonus.damage_pct)) + float(bonus.damage)
+	var dmg_max: float = float(_base.damage_max) * (1.0 + float(bonus.damage_pct)) + float(bonus.damage)
+	_damage_min = dmg_min
+	_damage_max = dmg_max
+	bullet_damage = (dmg_min + dmg_max) * 0.5
+	# DotA1 attack speed is interval x (1 - IAS); clamp it so a full item build
+	# cannot turn the bow into a machine gun.
+	fire_interval = maxf(0.30, float(_base.fire_interval) * (1.0 - float(bonus.attack_speed)))
+	armor = float(_base.armor) + float(bonus.armor)
+	move_speed = float(_base.move_speed) + float(bonus.move)
+	_slow_factor = maxf(float(_base.slow), float(bonus.slow))
+	var new_max := int(round(float(_base.max_health) + float(bonus.health)))
+	if new_max != max_health:
+		var gain := new_max - max_health
+		max_health = new_max
+		health = mini(max_health, health + maxi(0, gain))
+	Game.set_health(health, max_health)
+
+
+func _on_item_purchased(item_id: String) -> void:
+	var def := HeroProgress.item_by_id(item_id)
+	Fx.burst(global_position, Color(1.0, 0.85, 0.35), 10, 150.0, 0.7)
+	if def.has("name_zh"):
+		Game.announce(L10n.t("hud.bought") % HeroProgress.label(def), HeroProgress.label(def))
+
+
+func _on_leveled_up(level: int) -> void:
+	Fx.flash(global_position, Color(0.6, 0.9, 1.0), 1.6)
+	Game.announce(L10n.t("hud.level_up") % level, L10n.t("hud.level_up_sub"))
+
+
+## Called by the wave director when a creep dies.
+func register_kill(bounty_gold: int, bounty_xp: int) -> void:
+	if progress == null or dead:
+		return
+	progress.add_kill(bounty_gold, bounty_xp)
 
 
 func _process(delta: float) -> void:
@@ -100,6 +180,7 @@ func _process(delta: float) -> void:
 	rotation = aim.angle()
 	_move(delta)
 	_try_dash()
+	_try_force_staff()
 	_try_fire()
 	_try_special()
 	_update_sentry(delta)
@@ -123,6 +204,11 @@ func _tick(delta: float) -> void:
 	_dash_cd = maxf(0.0, _dash_cd - delta)
 	_special_cd = maxf(0.0, _special_cd - delta)
 	_invuln = maxf(0.0, _invuln - delta)
+	_force_cd = maxf(0.0, _force_cd - delta)
+	_root_left = maxf(0.0, _root_left - delta)
+	if _art != null:
+		_art.pose = lerpf(_art.pose, clampf(_root_left / ROOT_TIME, 0.0, 1.0), minf(1.0, delta * 12.0))
+		_art.bob = 1.0 if velocity.length() > 30.0 else 0.0
 	tick_hit_flash(delta)
 	_ghost_cd = maxf(0.0, _ghost_cd - delta)
 	if overdrive_left > 0.0:
@@ -170,6 +256,10 @@ func resolve_aim(stick: Vector2, to_mouse: Vector2) -> Vector2:
 
 func _move(delta: float) -> void:
 	var input_dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	# Mid-draw the archer is pinned: that is the whole point of the wind-up.
+	if _root_left > 0.0 and not _dashing:
+		velocity = Vector2.ZERO
+		return
 	if _dashing:
 		velocity = _dash_dir * dash_speed
 		if _ghost_cd <= 0.0:
@@ -198,7 +288,7 @@ func _try_dash() -> void:
 
 
 func _try_fire() -> void:
-	if Game.bullets_root == null or _fire_cd > 0.0:
+	if Game.bullets_root == null or _fire_cd > 0.0 or _root_left > 0.0:
 		return
 	# Auto mode fires by itself as long as something is inside the hero's
 	# range - no trigger to hold, and no wasted shots into empty lane.
@@ -211,9 +301,11 @@ func _try_fire() -> void:
 		var auto_rate := fire_interval / Game.buff_fire_rate_mult
 		_fire_cd = auto_rate * (0.62 if overdrive_left > 0.0 else 1.0)
 		return
-	if not Input.is_action_pressed("fire"):
+	# Manual shot: one press, one arrow, then the draw pins the hero for
+	# ROOT_TIME. Held fire is not a thing any more.
+	if not Input.is_action_just_pressed("fire"):
 		return
-	_shoot()
+	_shoot(true)
 	var rate := fire_interval / Game.buff_fire_rate_mult
 	_fire_cd = rate * (0.62 if overdrive_left > 0.0 else 1.0)
 
@@ -341,8 +433,10 @@ func _sentry_interval() -> float:
 	return 1.1 * pow(0.72, maxf(0.0, float(Game.buff_auto_attack - 1)))
 
 
-func _shoot() -> void:
+func _shoot(manual := false) -> void:
 	shots_fired += 1
+	if manual:
+		_root_left = ROOT_TIME
 	# One fan for every source of extra rounds, so overdrive and SPLIT SHOT
 	# compose instead of fighting over who writes the bullet loop.
 	var count := mini(1 + Game.buff_extra_shots + (2 if overdrive_left > 0.0 else 0), 6)
@@ -369,12 +463,15 @@ func _roll_damage() -> float:
 
 
 func _spawn_bullet(direction: Vector2, damage: float) -> void:
-	var bullet := BULLET_SCENE.instantiate()
-	bullet.setup(direction, damage, bullet_speed, true, bullet_color, Game.buff_pierce, _slow_factor, _slow_time)
+	var arrow := ARROW_SCENE.instantiate() as Arrow
+	# Frost Arrows read pale blue, a plain shot reads bone white - the payload
+	# of the passives is visible on the projectile itself.
+	var tint := Color(0.72, 0.92, 1.0) if _slow_factor > 0.0 else Color(0.94, 0.90, 0.72)
+	arrow.setup(direction, damage, bullet_speed, true, tint, Game.buff_pierce, _slow_factor, _slow_time)
 	# Fire from the hull, not from the muzzle tip: a creep standing on top of the
 	# hero would otherwise be spawned past, and a point-blank shot would miss.
-	bullet.position = global_position + direction * 14.0
-	Game.bullets_root.add_child(bullet)
+	arrow.position = global_position + direction * 14.0
+	Game.bullets_root.add_child(arrow)
 
 
 func _pop_muzzle() -> void:
@@ -396,16 +493,17 @@ func _hide_muzzle() -> void:
 
 
 func _update_visuals() -> void:
+	var visual: CanvasItem = _art if _art != null else body
 	if flash_left > 0.0:
-		body.modulate = Color(2.0, 1.1, 1.1, 1.0)
+		visual.modulate = Color(2.0, 1.1, 1.1, 1.0)
 	elif overdrive_left > 0.0:
-		body.modulate = Color(1.3, 1.05, 0.55, 1.0)
+		visual.modulate = Color(1.3, 1.05, 0.55, 1.0)
 	else:
-		body.modulate = Color.WHITE
+		visual.modulate = Color.WHITE
 	if _invuln > 0.0 and not _dashing:
-		body.modulate.a = 0.55 + 0.45 * absf(sin(Time.get_ticks_msec() / 90.0))
+		visual.modulate.a = 0.55 + 0.45 * absf(sin(Time.get_ticks_msec() / 90.0))
 	else:
-		body.modulate.a = 1.0
+		visual.modulate.a = 1.0
 
 
 func take_damage(amount: float, from: Vector2 = Vector2.ZERO) -> void:
@@ -498,10 +596,73 @@ func _dash_cooldown() -> float:
 	return dash_cooldown * Game.buff_dash_cd_mult
 
 
+## --- force staff (推推棒) ------------------------------------------------
+
+func _try_force_staff() -> void:
+	if _force_cd > 0.0:
+		return
+	if not Input.is_action_just_pressed("force_staff"):
+		return
+	push_self(aim)
+
+
+## Shoves the hero `force_push` pixels along `dir` in one frame, with a visible
+## streak so a teleport-like hop still reads as movement.
+func push_self(dir: Vector2) -> void:
+	if dead or not Game.running:
+		return
+	var heading := dir.normalized() if dir.length() > 0.01 else aim
+	var from := global_position
+	var to := clamp_to_arena_at(from + heading * force_push)
+	_force_cd = force_cooldown * Game.buff_dash_cd_mult
+	_invuln = maxf(_invuln, 0.25)
+	global_position = to
+	_streak(from, to)
+	Fx.burst(from, Color(0.6, 0.9, 1.0), 10, 180.0, 0.6)
+	Fx.burst(to, Color(0.75, 0.95, 1.0), 14, 220.0, 0.7)
+	Fx.flash(to, Color(0.7, 0.9, 1.0), 1.3)
+	Fx.sfx(Fx.SFX_WAVE, -4.0, 1.2)
+	Game.add_shake(0.25)
+
+
+func clamp_to_arena_at(point: Vector2) -> Vector2:
+	var margin := 28.0
+	return Vector2(
+		clampf(point.x, Game.arena.position.x + margin, Game.arena.end.x - margin),
+		clampf(point.y, Game.arena.position.y + margin, Game.arena.end.y - margin)
+	)
+
+
+func _streak(from: Vector2, to: Vector2) -> void:
+	if Game.fx_root == null:
+		return
+	var line := Line2D.new()
+	line.width = 10.0
+	line.default_color = Color(0.55, 0.9, 1.0, 0.35)
+	line.points = PackedVector2Array([from, to])
+	Game.fx_root.add_child(line)
+	var tween := line.create_tween()
+	tween.tween_property(line, "modulate:a", 0.0, 0.28)
+	tween.finished.connect(line.queue_free)
+
+
+func is_force_ready() -> bool:
+	return _force_cd <= 0.0
+
+
+func force_ratio() -> float:
+	var total := force_cooldown * Game.buff_dash_cd_mult
+	if total <= 0.0:
+		return 1.0
+	return clampf(1.0 - _force_cd / total, 0.0, 1.0)
+
+
 func _die() -> void:
 	dead = true
 	velocity = Vector2.ZERO
 	body.visible = false
+	if _art != null:
+		_art.visible = false
 	muzzle_flash.visible = false
 	Fx.burst(global_position, Color(0.45, 0.9, 1.0), 30, 480.0, 1.2)
 	Fx.burst(global_position, Color(1.0, 0.4, 0.5), 16, 300.0, 0.9)

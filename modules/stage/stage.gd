@@ -112,7 +112,7 @@ func _log_pad_event(event: InputEvent) -> void:
 		line = "PAD%d  AXIS %d  %+.2f" % [motion.device, motion.axis, motion.axis_value]
 	else:
 		return
-	for action in ["pause", "restart", "mute", "dash", "fire", "debug", "fullscreen"]:
+	for action in ["pause", "restart", "mute", "dash", "fire", "force_staff", "special", "debug", "fullscreen"]:
 		if event.is_action(action):
 			line += "  [" + action + "]"
 	hud.note_input(line)

@@ -37,7 +37,9 @@ func health_ratio() -> float:
 func _draw() -> void:
 	var ratio := health_ratio()
 	# Healthy canopy is green; as it gets chipped it drifts toward ember red.
-	var canopy := Color(0.34, 1.0, 0.64).lerp(Color(1.0, 0.42, 0.28), 1.0 - ratio)
+	# DotA1 foliage green rather than neon mint: a real tree, chipped toward
+	# ember red as the lane leaks.
+	var canopy := Color(0.30, 0.62, 0.26).lerp(Color(0.86, 0.36, 0.20), 1.0 - ratio)
 	var breathe := 0.5 + 0.5 * sin(_pulse)
 
 	# Ground shadow + glow.

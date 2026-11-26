@@ -8,11 +8,15 @@ func _enter_tree() -> void:
 	_add("move_right", [KEY_D, KEY_RIGHT], [], [], [[JOY_AXIS_LEFT_X, 1.0]])
 	_add("move_up", [KEY_W, KEY_UP], [], [], [[JOY_AXIS_LEFT_Y, -1.0]])
 	_add("move_down", [KEY_S, KEY_DOWN], [], [], [[JOY_AXIS_LEFT_Y, 1.0]])
-	_add("fire", [], [MOUSE_BUTTON_LEFT], [JOY_BUTTON_RIGHT_SHOULDER, JOY_BUTTON_X], [[JOY_AXIS_TRIGGER_RIGHT, 1.0]])
+	# X on both keyboard and pad is the bow: one press, one arrow, and the draw
+	# roots the hero (see PlayerUnit.ROOT_TIME).
+	_add("fire", [KEY_X], [MOUSE_BUTTON_LEFT], [JOY_BUTTON_X, JOY_BUTTON_RIGHT_SHOULDER], [[JOY_AXIS_TRIGGER_RIGHT, 1.0]])
+	# Force staff (推推棒): pad A, keyboard Q (keyboard A is already move-left).
+	_add("force_staff", [KEY_Q], [], [JOY_BUTTON_A], [])
 	_add("special", [KEY_E], [MOUSE_BUTTON_RIGHT], [JOY_BUTTON_Y], [])
 	_add("dash", [KEY_SPACE], [], [JOY_BUTTON_B, JOY_BUTTON_LEFT_SHOULDER], [])
 	_add("pause", [KEY_ESCAPE], [], [JOY_BUTTON_START, JOY_BUTTON_BACK], [])
-	_add("restart", [KEY_R, KEY_ENTER], [], [JOY_BUTTON_A], [])
+	_add("restart", [KEY_R, KEY_ENTER], [], [], [])
 	_add("mute", [KEY_M], [], [], [])
 	_add("fullscreen", [KEY_F11], [], [], [])
 	_add("debug", [KEY_F3], [], [JOY_BUTTON_RIGHT_STICK], [])

@@ -15,6 +15,8 @@ signal run_ended(final_score: int, best_score: int)
 ## know which module contributed what.
 signal buff_changed(def: BuffDef, stacks: int)
 signal enemy_killed(kind: int, at: Vector2)
+## One-line banner request (level up, item bought). The HUD owns the look.
+signal announced(title: String, subtitle: String)
 
 const SAVE_PATH := "user://neon_rust.cfg"
 const ARENA_SIZE := Vector2(1600.0, 1000.0)
@@ -198,6 +200,18 @@ func _reset_buffs() -> void:
 	buff_special_damage_mult = 1.0
 	buff_special_cd_mult = 1.0
 	buff_special_radius_mult = 1.0
+
+
+func announce(title: String, subtitle := "") -> void:
+	announced.emit(title, subtitle)
+
+
+## Every creep death goes through here: score, then gold and XP for the hero.
+func register_kill(gold: int, xp: int) -> void:
+	add_score(gold)
+	var unit := player as PlayerUnit
+	if unit != null and not unit.dead:
+		unit.register_kill(gold, xp)
 
 
 func add_score(amount: int) -> void:

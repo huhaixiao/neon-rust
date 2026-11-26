@@ -37,12 +37,16 @@ func _run() -> void:
 		_fail("hero attack_range did not come from the sheet: %.1f" % player.attack_range)
 	if not is_equal_approx(player.max_health, 473.0):
 		_fail("小黑 should have 473 HP, got %d" % player.max_health)
-	if not is_equal_approx(player.fire_interval, 1.7):
-		_fail("小黑 BAT should be 1.7s, got %.2f" % player.fire_interval)
+	# The effective interval is already boosted by the Slippers the starting gold
+	# auto-bought, so the sheet check reads the base sheet.
+	if not is_equal_approx(float(player._base.fire_interval), 1.7):
+		_fail("小黑 BAT should be 1.7s, got %.2f" % float(player._base.fire_interval))
 	if not is_equal_approx(player.move_speed, 300.0):
 		_fail("小黑 move speed should be 300, got %.0f" % player.move_speed)
-	if not is_equal_approx(player._damage_min, 44.0) or not is_equal_approx(player._damage_max, 55.0):
+	if not is_equal_approx(float(player._base.damage_min), 44.0) or not is_equal_approx(float(player._base.damage_max), 55.0):
 		_fail("小黑 damage window should be 44-55")
+	if player._damage_min <= 44.0:
+		_fail("starting items should already lift the damage window above 44")
 	if not player.auto_aim:
 		_fail("lane hero should aim itself")
 
