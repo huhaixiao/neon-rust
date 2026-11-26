@@ -70,6 +70,8 @@ func _on_body_entered(body: Node2D) -> void:
 		var enemy := body as Enemy
 		if enemy == null or _hit_bodies.has(body):
 			return
+		if enemy.team != Enemy.Team.DIRE:
+			return
 		enemy.take_damage(damage, global_position)
 		if slow > 0.0:
 			enemy.apply_slow(slow, slow_time)

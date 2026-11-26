@@ -47,6 +47,9 @@ var fx_root: Node2D = null
 var spawner: Node = null
 var camera: Camera2D = null
 var tree: Node2D = null
+## The one lane tower. While it stands, Dire creeps stop there instead of at
+## the tree; ranged creeps register it so they do not shoot through it.
+var tower: Node2D = null
 
 # --- run buffs -------------------------------------------------------------
 var buffs: Dictionary = {}          # id -> stacks
@@ -111,6 +114,7 @@ func clear_scene_refs() -> void:
 	spawner = null
 	camera = null
 	tree = null
+	tower = null
 
 
 func roll_buffs(count: int) -> Array[BuffDef]:

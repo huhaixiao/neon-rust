@@ -66,15 +66,22 @@ func _run() -> void:
 	if player._damage_min <= 44.0:
 		_fail("Slippers should raise the damage floor above 44, got %.1f" % player._damage_min)
 
-	# Buy boots next (500g) by feeding gold, and check move speed.
+	# The shop buys cheapest-first: 500 gold goes to the Ring of Regeneration
+	# (350g) before Boots, and the ring is what keeps the hero alive between waves.
 	var gold_before := prog.gold
 	Game.register_kill(500, 0)
+	if not prog.items.has("ring_of_regen"):
+		_fail("500 more gold should have bought the Ring of Regeneration, items = " + str(prog.items))
+	if player.hp_regen <= float(player._base.regen) + 0.1:
+		_fail("the ring should lift regen above the sheet's %.2f, got %.2f" % [float(player._base.regen), player.hp_regen])
+	# Another 500 clears Boots.
+	Game.register_kill(500, 0)
 	if not prog.items.has("boots"):
-		_fail("500 more gold should have bought Boots, items = " + str(prog.items))
+		_fail("Boots should be the next purchase, items = " + str(prog.items))
 	if player.move_speed <= 300.0:
 		_fail("Boots should raise move speed above 300, got %.0f" % player.move_speed)
-	if prog.gold >= gold_before + 500:
-		_fail("buying an item must spend the gold")
+	if prog.gold >= gold_before + 1000:
+		_fail("buying items must spend the gold")
 
 	# --- arrow projectile -------------------------------------------------
 	var enemy_scene: PackedScene = load("res://modules/enemies/enemy.tscn")

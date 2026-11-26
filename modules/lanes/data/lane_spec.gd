@@ -14,6 +14,11 @@ const WIDTH := 220.0
 const HALF_WIDTH := WIDTH * 0.5
 ## Where the hero stands: in front of the tree, facing up the lane.
 const HERO_SPAWN := Vector2(392.0, 706.0)
+## The one tower, behind the hero and in front of the tree. Until it falls the
+## lane creeps cannot reach the tree at all.
+const TOWER_T := 0.92
+## Radiant (our) creeps step onto the lane just behind that tower.
+const RADIANT_SPAWN_T := 0.97
 
 
 static func direction() -> Vector2:
@@ -47,3 +52,12 @@ static func progress_of(at: Vector2) -> float:
 ## Where the hero spawns: front of the tree, slightly up-lane.
 static func hero_spawn() -> Vector2:
 	return HERO_SPAWN
+
+
+static func tower_pos() -> Vector2:
+	return point(TOWER_T)
+
+
+## Radiant creeps start behind the tower and push up the lane.
+static func radiant_spawn() -> Vector2:
+	return point(RADIANT_SPAWN_T)

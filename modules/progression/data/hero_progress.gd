@@ -29,6 +29,8 @@ const XP_TABLE: Array = [
 const ITEMS: Array = [
 	{"id": "slippers", "name_zh": "敏捷便鞋", "name_en": "Slippers of Agility",
 		"cost": 450, "damage": 3.0, "attack_speed": 0.03},
+	{"id": "ring_of_regen", "name_zh": "回复戒指", "name_en": "Ring of Regeneration",
+		"cost": 350, "regen": 2.0},
 	{"id": "boots", "name_zh": "速度之靴", "name_en": "Boots of Speed",
 		"cost": 500, "move": 50.0},
 	{"id": "gloves", "name_zh": "急速手套", "name_en": "Gloves of Haste",
@@ -175,7 +177,7 @@ func skill_level(skill_id: String) -> int:
 func bonus() -> Dictionary:
 	var out := {
 		"damage": 0.0, "damage_pct": 0.0, "attack_speed": 0.0,
-		"armor": 0.0, "health": 0.0, "move": 0.0, "slow": 0.0,
+		"armor": 0.0, "health": 0.0, "move": 0.0, "slow": 0.0, "regen": 0.0,
 	}
 	for id in items:
 		var def := _find(ITEMS, id)
@@ -186,6 +188,7 @@ func bonus() -> Dictionary:
 		out.armor += float(def.get("armor", 0.0))
 		out.health += float(def.get("health", 0.0))
 		out.move += float(def.get("move", 0.0))
+		out.regen += float(def.get("regen", 0.0))
 	for def in SKILLS:
 		var have := skill_level(String(def.id))
 		if have <= 0:

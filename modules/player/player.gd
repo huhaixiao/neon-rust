@@ -34,6 +34,9 @@ var force_push := 300.0
 var force_cooldown := 20.0
 var armor := 0.0
 var health := 100
+## HP per second: the DotA1 base regen plus anything the auto-bought items add.
+var hp_regen := 0.0
+var _regen_acc := 0.0
 var aim := Vector2.RIGHT
 var overdrive_left := 0.0
 ## Closest enemy inside `attack_range`, refreshed every frame in auto mode.
@@ -105,6 +108,7 @@ func apply_hero(def: HeroDef) -> void:
 	_damage_min = def.damage_min
 	_damage_max = def.damage_max
 	armor = def.armor
+	hp_regen = def.hp_regen
 	fire_interval = def.attack_interval
 	bullet_speed = def.bullet_speed
 	move_speed = def.move_speed
@@ -119,6 +123,7 @@ func apply_hero(def: HeroDef) -> void:
 		"damage": def.damage,
 		"fire_interval": def.attack_interval,
 		"armor": def.armor,
+		"regen": def.hp_regen,
 		"max_health": def.health,
 		"move_speed": def.move_speed,
 		"slow": def.slow_factor,
@@ -141,6 +146,7 @@ func refresh_stats() -> void:
 	# cannot turn the bow into a machine gun.
 	fire_interval = maxf(0.30, float(_base.fire_interval) * (1.0 - float(bonus.attack_speed)))
 	armor = float(_base.armor) + float(bonus.armor)
+	hp_regen = float(_base.regen) + float(bonus.regen)
 	move_speed = float(_base.move_speed) + float(bonus.move)
 	_slow_factor = maxf(float(_base.slow), float(bonus.slow))
 	var new_max := int(round(float(_base.max_health) + float(bonus.health)))
@@ -211,6 +217,7 @@ func _tick(delta: float) -> void:
 		_art.bob = 1.0 if velocity.length() > 30.0 else 0.0
 	tick_hit_flash(delta)
 	_ghost_cd = maxf(0.0, _ghost_cd - delta)
+	_tick_regen(delta)
 	if overdrive_left > 0.0:
 		overdrive_left = maxf(0.0, overdrive_left - delta)
 		if overdrive_left <= 0.0:
@@ -219,6 +226,20 @@ func _tick(delta: float) -> void:
 		_dash_left -= delta
 		if _dash_left <= 0.0:
 			_dashing = false
+
+
+## Sips health back at the sheet's rate. Fractions are carried, so 0.76 HP/s
+## reads as a steady trickle instead of a stutter of ones.
+func _tick_regen(delta: float) -> void:
+	if dead or not Game.running or hp_regen <= 0.0 or health >= max_health:
+		return
+	_regen_acc += hp_regen * delta
+	var whole := int(_regen_acc)
+	if whole <= 0:
+		return
+	_regen_acc -= float(whole)
+	health = mini(max_health, health + whole)
+	Game.set_health(health, max_health)
 
 
 func _update_aim() -> void:
@@ -329,6 +350,10 @@ func fire_special() -> void:
 		var enemy := node as Enemy
 		if enemy == null or enemy.dead:
 			continue
+		# Only the Dire fleet is a target: the Radiant wave is the hero's own
+		# lane partner, so aiming at it would eat the hero's whole output.
+		if enemy.team != Enemy.Team.DIRE:
+			continue
 		if enemy.global_position.distance_to(global_position) <= radius:
 			enemy.take_damage(damage, global_position)
 	# The pulse doubles as a panic button: hostile rounds inside the ring go too.
@@ -412,6 +437,8 @@ func _nearest_enemy(max_distance: float) -> Enemy:
 	for node in Game.enemies_root.get_children():
 		var enemy := node as Enemy
 		if enemy == null or enemy.dead:
+			continue
+		if enemy.team != Enemy.Team.DIRE:
 			continue
 		var gap := enemy.global_position.distance_to(global_position)
 		if gap <= best_gap:

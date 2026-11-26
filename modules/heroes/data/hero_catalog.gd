@@ -39,6 +39,8 @@ static func _build(id: String) -> HeroDef:
 			def.move_speed = 300.0
 			def.health = 473
 			def.armor = 1.0
+			# DotAWiki 6.83d sheet: 0.76 HP/s base regeneration.
+			def.hp_regen = 0.76
 			def.bullet_color = Color(0.62, 0.9, 1.0)
 			def.slow_factor = 0.45
 			def.slow_time = 1.5

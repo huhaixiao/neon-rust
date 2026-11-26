@@ -28,6 +28,11 @@ func _ready() -> void:
 	Game.pickups_root = $Pickups
 	Game.fx_root = $FX
 	Game.spawner = $Spawner
+	# The tower's spot comes from LaneSpec, so the scene file and the lane art
+	# can never disagree about where the一塔 stands.
+	var tower := get_node_or_null("Tower") as Node2D
+	if tower != null:
+		tower.global_position = LaneSpec.tower_pos()
 	hud.resume_requested.connect(_on_hud_resume)
 	hud.restart_requested.connect(_restart)
 	hud.title_requested.connect(_leave_to_title)
@@ -47,7 +52,7 @@ func _freeze_gameplay_while_paused() -> void:
 	# PROCESS_MODE_INHERIT propagates from the parent, so this node being
 	# ALWAYS would drag every gameplay child along with it. Re-arm the
 	# gameplay subtrees as PAUSABLE; only the input/HUD layer stays awake.
-	for path in ["Player", "Enemies", "Bullets", "Pickups", "FX", "Spawner", "Camera2D", "WorldTree"]:
+	for path in ["Player", "Enemies", "Bullets", "Pickups", "FX", "Spawner", "Camera2D", "WorldTree", "Tower"]:
 		var node := get_node_or_null(path)
 		if node != null:
 			node.process_mode = Node.PROCESS_MODE_PAUSABLE

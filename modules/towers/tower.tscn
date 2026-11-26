@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://modules/towers/tower.gd" id="1_tower"]
+[ext_resource type="AudioStreamWAV" path="res://modules/global/assets/audio/sfx/shoot.wav" id="2_shoot"]
+
+[node name="LaneTower" type="Node2D"]
+z_index = 2
+script = ExtResource("1_tower")
+
+[node name="SfxShoot" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("2_shoot")

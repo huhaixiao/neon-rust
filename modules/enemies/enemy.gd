@@ -1,13 +1,21 @@
 class_name Enemy
 extends ShipBody
-## DotA1 兵线小兵. The whole stat sheet comes from `CreepCatalog`, so the three
-## kinds here are only "which lane role", not a hand-tuned enemy design:
+## One lane creep. Two of these fleets exist at once: the Dire wave that walks
+## down the lane at the tree, and the Radiant wave that walks up it at the Dire
+## entry. Both sides read the same DotA1 sheet (`CreepCatalog`), so a creep's
+## strength never depends on which side it fights for — only the Dire fleet
+## scales over the run.
 ##
-##   CHASER  = 近战兵   BRUTE = 投石车   SPITTER = 远程兵
+##   CHASER = 近战兵   BRUTE = 投石车   SPITTER = 远程兵
+##
+## Combat is lane-vs-lane: a creep picks the closest *opposing creep* first and
+## only goes for the hero when no enemy creep is around. That is what lets the
+## hero stand behind its own wave and last-hit instead of tanking four bodies.
 
-signal died(kind: int, at: Vector2)
+signal died(kind: int, at: Vector2, team: int)
 
 enum Kind { CHASER, BRUTE, SPITTER }
+enum Team { DIRE, RADIANT }
 
 const TEX_CHASER := preload("res://modules/enemies/assets/sprites/enemy_chaser.png")
 const TEX_BRUTE := preload("res://modules/enemies/assets/sprites/enemy_brute.png")
@@ -16,6 +24,7 @@ const BULLET_SCENE := preload("res://modules/projectiles/bullet.tscn")
 
 @export var kind: Kind = Kind.CHASER
 
+var team := Team.DIRE
 var def: CreepDef
 var health := 550.0
 var health_max := 550.0
@@ -33,14 +42,15 @@ var radius := 17.0
 var body_scale := 0.82
 var base_color := Color(1.0, 0.25, 0.5)
 
-## Lane duty. A creep with `lane_active` walks toward `lane_end` (the World
-## Tree) and only breaks off to fight when the hero comes within `engage_range`.
-## Reaching the tree does not delete the creep any more: it stands there and
-## hits the tree until something kills it, exactly like a DotA1 creep pushing
-## a building.
+## Lane duty. A creep with `lane_active` walks toward `lane_end` and only breaks
+## off to fight. Reaching the far end does not delete a Dire creep: it stands at
+## the tower (or the tree) and hits it until something kills it, exactly like a
+## DotA1 creep pushing a building. Radiant creeps that reach the Dire entry walk
+## off the map instead - they are the ones doing the pushing.
 var lane_active := false
 var lane_end := Vector2.ZERO
 var engage_range := 250.0
+var despawn_at_end := false
 
 var slow_mult := 1.0
 var slow_left := 0.0
@@ -50,7 +60,8 @@ var hp_bar: CreepHealthBar = null
 var art_kind := 0
 
 var _attack_cd := 0.0
-var _at_tree := false
+var _at_end := false
+var _being_despawned := false
 var _orbit := 1.0
 
 @onready var sprite: Sprite2D = $Sprite
@@ -59,8 +70,9 @@ var _orbit := 1.0
 @onready var sfx_shoot: AudioStreamPlayer = $SfxShoot
 
 
-func configure(kind_value, wave_index: int) -> void:
+func configure(kind_value, wave_index: int, side := Team.DIRE) -> void:
 	kind = kind_value
+	team = side
 	var creep_id := CreepCatalog.MELEE
 	match kind:
 		Kind.BRUTE:
@@ -68,7 +80,9 @@ func configure(kind_value, wave_index: int) -> void:
 		Kind.SPITTER:
 			creep_id = CreepCatalog.RANGED
 	def = CreepCatalog.get_def(creep_id)
-	var cycles := CreepCatalog.cycles_for_wave(wave_index)
+	# Only the Dire fleet gets the DotA1 upgrade cycles; the Radiant wave is the
+	# constant "wall" the player pushes behind.
+	var cycles := 0 if team == Team.RADIANT else CreepCatalog.cycles_for_wave(wave_index)
 	health_max = def.health_at(cycles)
 	health = health_max
 	armor = def.armor
@@ -87,11 +101,14 @@ func configure(kind_value, wave_index: int) -> void:
 	_orbit = 1.0 if randf() < 0.5 else -1.0
 
 
-## Dire-side palette: the creeps are the enemy lane, so they all read red even
-## though the hit sparks keep each role's colour.
+## Dire-side palette: the creeps that walk at the tree all read red.
 const DIRE_MELEE := Color(0.66, 0.20, 0.20)
 const DIRE_RANGED := Color(0.52, 0.20, 0.40)
 const DIRE_SIEGE := Color(0.46, 0.26, 0.18)
+## Radiant-side palette: the wave the player fights behind reads green/teal.
+const RADIANT_MELEE := Color(0.24, 0.52, 0.28)
+const RADIANT_RANGED := Color(0.22, 0.44, 0.52)
+const RADIANT_SIEGE := Color(0.30, 0.44, 0.26)
 
 
 func _ready() -> void:
@@ -112,6 +129,14 @@ func _ready() -> void:
 
 
 func _team_color() -> Color:
+	if team == Team.RADIANT:
+		match art_kind:
+			2:
+				return RADIANT_SIEGE
+			1:
+				return RADIANT_RANGED
+			_:
+				return RADIANT_MELEE
 	match art_kind:
 		2:
 			return DIRE_SIEGE
@@ -148,26 +173,83 @@ func _process(delta: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if dead:
+	if dead or _being_despawned:
 		return
 	_attack_cd = maxf(0.0, _attack_cd - delta)
 	_tick_slow(delta)
 	if not Game.running:
 		return
+	# Lane-vs-lane first: a creep that has an opposing creep nearby never peels
+	# off to chase the hero.
+	var foe := _nearest_foe()
+	if foe != null:
+		_fight_foe(foe, delta)
+		return
 	var player := Game.player as PlayerUnit
-	if player != null and not player.dead:
+	if player != null and not player.dead and team == Team.DIRE:
 		var distance: float = player.global_position.distance_to(global_position)
 		# On lane duty the hero has to come to the creep; otherwise the whole
 		# wave would peel off and chase one target around the map.
 		if not lane_active or distance <= engage_range:
-			_fight(player, distance, delta)
+			_fight_hero(player, distance, delta)
 			return
 	if lane_active:
 		_march_lane(delta)
 
 
-## Chases, stops at its own attack range, and hits on its own interval.
-func _fight(player: PlayerUnit, distance: float, delta: float) -> void:
+## The closest creep of the other fleet inside engage distance.
+func _nearest_foe() -> Enemy:
+	var best: Enemy = null
+	var best_gap := maxf(attack_range, 300.0)
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var other := node as Enemy
+		if other == null or other == self or other.dead or other.team == team:
+			continue
+		var gap := other.global_position.distance_to(global_position)
+		if gap <= best_gap:
+			best_gap = gap
+			best = other
+	return best
+
+
+## Creep vs creep: walk into range, then trade blows on the DotA1 attack
+## interval. Damage is full (no hero-style reduction) and armour still applies
+## inside `take_damage`.
+func _fight_foe(foe: Enemy, delta: float) -> void:
+	var offset: Vector2 = foe.global_position - global_position
+	var distance := offset.length()
+	var direction := offset.normalized() if distance > 0.001 else Vector2.RIGHT
+	var standoff := attack_range if attack_range > 150.0 else radius + foe.radius + 6.0
+	if distance > standoff:
+		velocity = velocity.lerp(direction * speed * slow_mult, minf(1.0, delta * 4.0))
+	elif distance < standoff - 10.0:
+		velocity = velocity.lerp(-direction * speed * 0.6 * slow_mult, minf(1.0, delta * 4.0))
+	else:
+		velocity = velocity.lerp(Vector2.ZERO, minf(1.0, delta * 6.0))
+	velocity += _separation()
+	position += velocity * delta
+	clamp_to_arena(radius + 4.0)
+	if projectile_speed <= 0.0 and velocity.length() > 4.0:
+		rotation = lerp_angle(rotation, velocity.angle(), minf(1.0, delta * 9.0))
+	else:
+		_face(direction, delta)
+	if distance <= standoff + 10.0 and not foe.dead:
+		_strike_foe(foe)
+
+
+func _strike_foe(foe: Enemy) -> void:
+	if _attack_cd > 0.0:
+		return
+	_attack_cd = attack_interval
+	if projectile_speed > 0.0:
+		_tracer(foe.global_position, projectile_color)
+		sfx_shoot.pitch_scale = randf_range(0.82, 0.98)
+		sfx_shoot.play()
+	foe.take_damage(contact_damage, global_position)
+
+
+## Chases the hero, stops at its own attack range, and hits on its own interval.
+func _fight_hero(player: PlayerUnit, distance: float, delta: float) -> void:
 	var to_player: Vector2 = player.global_position - global_position
 	var direction := to_player.normalized() if distance > 0.001 else Vector2.RIGHT
 	var standoff := attack_range if attack_range > 150.0 else radius + 20.0
@@ -187,24 +269,31 @@ func _fight(player: PlayerUnit, distance: float, delta: float) -> void:
 	else:
 		_face(direction, delta)
 	if distance <= standoff + 8.0:
-		_strike(player)
+		_strike_hero(player)
 
 
 func _face(direction: Vector2, delta: float) -> void:
 	rotation = lerp_angle(rotation, direction.angle(), minf(1.0, delta * 7.0))
 
 
-## Walks the middle lane toward the tree, then sieges it.
+## Walks the middle lane, then sieges whatever is at the end of it: the tower
+## while it stands, the tree once it is rubble.
 func _march_lane(delta: float) -> void:
-	if _at_tree:
-		_siege_tree(delta)
+	if _at_end:
+		_siege_structure()
 		return
-	var to_end: Vector2 = lane_end - global_position
+	var stop_pos := lane_end
+	var stop_gap := radius + 26.0
+	var tower := Game.tower as LaneTower
+	if team == Team.DIRE and is_instance_valid(tower) and not tower.dead:
+		stop_pos = tower.global_position
+		stop_gap = radius + LaneTower.RADIUS + 26.0
+	var to_end: Vector2 = stop_pos - global_position
 	var distance := to_end.length()
-	if distance <= radius + 26.0:
-		_at_tree = true
+	if distance <= stop_gap:
+		_at_end = true
 		velocity = Vector2.ZERO
-		_siege_tree(delta)
+		_siege_structure()
 		return
 	var direction := to_end.normalized() if distance > 0.001 else Vector2.DOWN
 	velocity = velocity.lerp(direction * speed * slow_mult, minf(1.0, delta * 4.0))
@@ -212,12 +301,43 @@ func _march_lane(delta: float) -> void:
 	position += velocity * delta
 	clamp_to_arena(radius + 4.0)
 	_face(direction, delta)
+	if despawn_at_end and distance <= stop_gap * 2.0:
+		_pass_through()
 
 
-## Creeps that get past the hero keep chewing on the tree. DotA1 numbers:
-## a melee creep pays 21 damage per hit into a 4250 HP ancient.
-func _siege_tree(_delta: float) -> void:
+## Radiant creeps that finish the push walk off the map instead of standing in
+## the entry corner for the rest of the run.
+func _pass_through() -> void:
+	if _being_despawned:
+		return
+	_being_despawned = true
+	if hp_bar != null:
+		hp_bar.queue_free()
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(art, "modulate:a", 0.0, 0.25)
+	tween.tween_property(art, "scale", art.scale * 0.6, 0.25)
+	tween.finished.connect(queue_free)
+
+
+## Creeps that get past the hero chew on the tower first, then the tree.
+## DotA1 numbers: a melee creep pays 21 per hit, a siege unit 150% of that into
+## buildings; the tower's own 18 armour is applied by `take_damage`.
+func _siege_structure() -> void:
 	if _attack_cd > 0.0:
+		return
+	var tower := Game.tower as LaneTower
+	if is_instance_valid(tower) and not tower.dead:
+		_attack_cd = attack_interval
+		var siege := 1.5 if kind == Kind.BRUTE else 1.0
+		tower.take_damage(contact_damage * siege, global_position)
+		Fx.burst(tower.global_position, Color(1.0, 0.7, 0.35), 8, 160.0, 0.7)
+		Fx.sfx(Fx.SFX_HIT, -6.0, 0.8)
+		return
+	# Tower is down (or there never was one): if the creep is still standing at
+	# its rubble, get back on the lane and go for the tree.
+	if global_position.distance_to(lane_end) > radius + 34.0:
+		_at_end = false
 		return
 	_attack_cd = attack_interval
 	Game.damage_tree(int(round(contact_damage)))
@@ -226,7 +346,7 @@ func _siege_tree(_delta: float) -> void:
 	Fx.sfx(Fx.SFX_HIT, -6.0, 0.8)
 
 
-func _strike(player: PlayerUnit) -> void:
+func _strike_hero(player: PlayerUnit) -> void:
 	if _attack_cd > 0.0:
 		return
 	_attack_cd = attack_interval
@@ -246,6 +366,24 @@ func _strike(player: PlayerUnit) -> void:
 		return
 	player.take_damage(int(round(amount)), global_position)
 	Fx.burst(global_position, base_color, 6, 150.0, 0.6)
+
+
+## Thin fading line for ranged creeps: they trade blows from 500 px, so the
+## shot has to be readable without spawning a real projectile per exchange.
+func _tracer(to: Vector2, color: Color) -> void:
+	var root := Game.fx_root
+	if root == null:
+		return
+	var line := Line2D.new()
+	line.width = 2.4
+	line.default_color = color
+	line.points = PackedVector2Array([Vector2.ZERO, to - global_position])
+	line.position = global_position
+	line.z_index = 5
+	root.add_child(line)
+	var tween := line.create_tween()
+	tween.tween_property(line, "modulate:a", 0.0, 0.16)
+	tween.finished.connect(line.queue_free)
 
 
 func apply_slow(factor: float, duration: float) -> void:
@@ -278,7 +416,7 @@ func _separation() -> Vector2:
 
 
 func take_damage(amount: float, hit_at: Vector2) -> void:
-	if dead:
+	if dead or _being_despawned:
 		return
 	health -= Armor.apply(amount, armor)
 	start_hit_flash(0.1)
@@ -290,7 +428,7 @@ func take_damage(amount: float, hit_at: Vector2) -> void:
 
 func _die() -> void:
 	dead = true
-	died.emit(kind, global_position)
+	died.emit(kind, global_position, team)
 	Fx.burst(global_position, base_color, 22, 360.0, 1.0)
 	Fx.flash(global_position, base_color)
 	Fx.sfx(Fx.SFX_DIE, -4.0, randf_range(0.9, 1.2))

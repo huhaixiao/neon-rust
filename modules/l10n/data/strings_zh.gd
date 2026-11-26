@@ -58,6 +58,8 @@ const STRINGS := {
 	"hud.controls.kb": "WASD 移动   X 射箭(定身)   Q 推推棒   E 特殊   空格 冲刺",
 	"hud.controls.pad": "左摇杆 移动   X 射箭(定身)   A 推推棒   Y 特殊   B 冲刺",
 	"hud.tree": "世界之树  %03d / %03d",
+	"hud.tower_down": "一塔被拆了",
+	"hud.tower_down_sub": "小兵开始啃世界之树",
 		"hud.bought": "买入 %s",
 	"hud.level_up": "英雄升至 %d 级",
 	"hud.level_up_sub": "已自动分配技能点",

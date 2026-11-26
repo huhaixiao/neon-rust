@@ -21,6 +21,9 @@ extends Resource
 @export var health := 130
 ## Positive armour soaks incoming damage (DotA1 6.x formula).
 @export var armor := 0.0
+## HP per second, straight from the hero sheet. Without it every point of chip
+## damage is permanent and a lane run can only ever end in a slow bleed-out.
+@export var hp_regen := 0.0
 @export var bullet_color := Color(0.55, 0.85, 1.0)
 ## Frost-arrow style slow applied to whatever a bolt hits.
 @export var slow_factor := 0.0

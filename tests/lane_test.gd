@@ -80,12 +80,22 @@ func _run() -> void:
 		_fail("siege range should be 690, got %.0f" % siege.attack_range)
 	if not is_equal_approx(siege.attack_interval, 2.7):
 		_fail("siege BAT should be 2.7s, got %.2f" % siege.attack_interval)
-	# 6 cycles later (wave 91) a melee creep is 60 HP / 6 damage fatter.
+	# 12 upgrade cycles later (wave 91, one cycle per 7 waves) a melee creep is
+	# 120 HP fatter.
 	var late := enemy_scene.instantiate() as Enemy
 	late.configure(Enemy.Kind.CHASER, 91)
-	if not is_equal_approx(late.health_max, 610.0):
+	if not is_equal_approx(late.health_max, 670.0):
 		_fail("melee creep upgrade cycle wrong: %.0f HP at wave 91" % late.health_max)
 	late.free()
+
+	# A Radiant creep never scales: it is the fixed wall the player pushes behind.
+	var ally := enemy_scene.instantiate() as Enemy
+	ally.configure(Enemy.Kind.CHASER, 91, Enemy.Team.RADIANT)
+	if not is_equal_approx(ally.health_max, 550.0):
+		_fail("Radiant creep should stay at the base 550 HP, got %.0f" % ally.health_max)
+	if ally.team != Enemy.Team.RADIANT:
+		_fail("Radiant creep did not keep its team")
+	ally.free()
 
 	# --- armour soaks damage the DotA1 way --------------------------------
 	var tank := enemy_scene.instantiate() as Enemy
@@ -109,11 +119,18 @@ func _run() -> void:
 			_fail("lane should end at the tree, got %s" % str(spawner.lane_end))
 		# Creeps enter at the top-right corner and stay on the lane corridor.
 		for i in 12:
-			var point: Vector2 = spawner._spawn_point()
+			var point: Vector2 = spawner._spawn_point(Enemy.Team.DIRE)
 			if point.distance_to(LaneSpec.START) > 120.0:
 				_fail("creep did not spawn at the Dire entry, got %s" % str(point))
 			if absf(LaneSpec.lateral(point)) > 90.0:
 				_fail("creep spawned off the lane corridor, lateral = %.1f" % LaneSpec.lateral(point))
+		# The Radiant wave steps on behind the tower and walks the other way.
+		for i in 6:
+			var ally_point: Vector2 = spawner._spawn_point(Enemy.Team.RADIANT)
+			if ally_point.distance_to(LaneSpec.radiant_spawn()) > 120.0:
+				_fail("Radiant creep did not spawn behind the tower, got %s" % str(ally_point))
+			if LaneSpec.progress_of(ally_point) < 0.9:
+				_fail("Radiant creep spawned too far up-lane: %.2f" % LaneSpec.progress_of(ally_point))
 		# Defend the bottom-left: the tree and hero both live there.
 		if LaneSpec.TREE.x > 300.0 or LaneSpec.TREE.y < 700.0:
 			_fail("the World Tree should sit in the bottom-left corner, got %s" % str(LaneSpec.TREE))
@@ -122,7 +139,7 @@ func _run() -> void:
 		if player.global_position.distance_to(LaneSpec.hero_spawn()) > 6.0:
 			_fail("the hero should spawn in front of the tree, got %s" % str(player.global_position))
 
-		# --- DotA1 wave layout: 3 melee + 1 ranged, siege every 7th ------
+		# --- DotA1 wave layout + the Dire reinforcement ladder --------
 		var plain := spawner.composition(1)
 		if plain.size() != 4:
 			_fail("wave 1 should be 4 creeps, got %d" % plain.size())
@@ -135,13 +152,23 @@ func _run() -> void:
 				ranged_count += 1
 		if melee_count != 3 or ranged_count != 1:
 			_fail("wave 1 should be 3 melee + 1 ranged, got %d/%d" % [melee_count, ranged_count])
+		# From wave 4 the Dire side brings one extra melee creep.
+		if spawner.composition(4).size() != 5:
+			_fail("wave 4 should already reinforce to 5 creeps, got %d" % spawner.composition(4).size())
+		# Wave 10 adds the first extra ranged creep: 4 melee + 2 ranged.
+		if spawner.composition(10).size() != 6:
+			_fail("wave 10 should be 6 creeps, got %d" % spawner.composition(10).size())
 		var seventh := spawner.composition(7)
-		if seventh.size() != 5:
-			_fail("wave 7 should add a siege creep, got %d units" % seventh.size())
+		if seventh.size() != 6:
+			_fail("wave 7 should add a siege creep (now 6 units), got %d" % seventh.size())
 		if not seventh.has(Enemy.Kind.BRUTE):
 			_fail("wave 7 did not include the siege creep")
 		if spawner.composition(8).has(Enemy.Kind.BRUTE):
 			_fail("wave 8 should not carry a siege creep")
+		# The Radiant wave is constant, and never gets a siege unit.
+		if spawner.friendly_composition().size() != 4:
+			_fail("Radiant wave should stay 3 melee + 1 ranged")
+
 
 	for entry in get_tree().get_nodes_in_group("enemies"):
 		entry.queue_free()
@@ -154,6 +181,39 @@ func _run() -> void:
 	if Game.max_tree_health != 4250:
 		_fail("World Tree should have 4250 HP, got %d" % Game.max_tree_health)
 	var tree_before := Game.tree_health
+
+	# --- one tower guards the tree, not the hero ------------------------
+	var tower := Game.tower as LaneTower
+	if not is_instance_valid(tower):
+		_fail("the tier-1 tower was not wired")
+	else:
+		if not is_equal_approx(tower.health_max, 1300.0):
+			_fail("tower should have 1300 HP, got %.0f" % tower.health_max)
+		if not is_equal_approx(tower.health, tower.health_max):
+			_fail("tower should start at full health")
+		# The tower sits behind the hero and in front of the tree.
+		if LaneSpec.progress_of(tower.global_position) <= LaneSpec.progress_of(player.global_position):
+			_fail("the tower should stand between the hero and the tree")
+		if LaneSpec.progress_of(tower.global_position) >= 1.0:
+			_fail("the tower should stand in front of the World Tree")
+
+	# --- the tower only shoots the Dire fleet ----------------------------
+	# Hero firing paused, so a health drop here can only be the tower's bolt.
+	player.set_process(false)
+	var tower_food := enemy_scene.instantiate() as Enemy
+	tower_food.configure(Enemy.Kind.CHASER, 1, Enemy.Team.DIRE)
+	tower_food.speed = 0.0
+	tower_food.position = tower.global_position + Vector2(-250.0, -40.0)
+	Game.enemies_root.add_child(tower_food)
+	var food_hp := tower_food.health
+	for i in 90:
+		await get_tree().physics_frame
+	if is_instance_valid(tower_food) and not tower_food.is_queued_for_deletion() and tower_food.health >= food_hp:
+		_fail("the tower never fired at a Dire creep in range (%.0f HP left)" % tower_food.health)
+	for entry in get_tree().get_nodes_in_group("enemies"):
+		entry.queue_free()
+	await get_tree().physics_frame
+	player.set_process(true)
 
 	# --- auto attack: no fire input, creep in range gets shot --------------
 	var near := enemy_scene.instantiate() as Enemy
@@ -212,6 +272,11 @@ func _run() -> void:
 	if chilled.slow_mult < 1.0:
 		_fail("slow did not wear off after its duration")
 
+	# Tower demolished: this is the leak case, creeps now reach the tree.
+	if is_instance_valid(tower):
+		tower.dead = true
+	await get_tree().physics_frame
+
 	# --- a creep that reaches the tree sieges it -------------------------
 	var leaker := enemy_scene.instantiate() as Enemy
 	leaker.configure(Enemy.Kind.CHASER, 1)
@@ -232,13 +297,13 @@ func _run() -> void:
 	# --- no intermission: a cleared wave starts the next one right away ---
 	if spawner != null:
 		spawner.wave = 3
-		spawner._alive.clear()
-		spawner._queue.clear()
+		spawner._dire.clear()
+		spawner._dire_queue.clear()
 		spawner._finish_wave()
 		if spawner.wave != 4:
 			_fail("cleared wave did not start wave 4 immediately, wave = %d" % spawner.wave)
-		if spawner._queue.size() != 4:
-			_fail("wave 4 should already be queued (4 creeps), got %d" % spawner._queue.size())
+		if spawner._dire_queue.size() != 5:
+			_fail("wave 4 should already be queued (5 creeps), got %d" % spawner._dire_queue.size())
 		# The draft that follows pauses the tree; release it again.
 		get_tree().paused = false
 

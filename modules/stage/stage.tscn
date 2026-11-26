@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://modules/stage/stage.gd" id="1_stage"]
 [ext_resource type="Texture2D" path="res://modules/global/assets/sprites/world/arena_floor.png" id="2_floor"]
@@ -9,6 +9,7 @@
 [ext_resource type="Script" path="res://modules/waves/spawner.gd" id="7_spawner"]
 [ext_resource type="PackedScene" path="res://modules/towers/world_tree.tscn" id="8_tree"]
 [ext_resource type="Script" path="res://modules/lanes/components/lane_visual.gd" id="9_lane"]
+[ext_resource type="PackedScene" path="res://modules/towers/tower.tscn" id="10_tower"]
 
 [node name="Stage" type="Node2D"]
 script = ExtResource("1_stage")
@@ -31,6 +32,9 @@ position = Vector2(392, 706)
 [node name="WorldTree" parent="." instance=ExtResource("8_tree")]
 position = Vector2(190, 800)
 z_index = 2
+
+[node name="Tower" parent="." instance=ExtResource("10_tower")]
+position = Vector2(292, 748)
 
 [node name="Bullets" type="Node2D" parent="."]
 

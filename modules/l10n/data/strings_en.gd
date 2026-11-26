@@ -57,6 +57,8 @@ const STRINGS := {
 	"hud.controls.kb": "WASD  MOVE     AUTO  ATTACK     E  SPECIAL     SPACE  DASH",
 	"hud.controls.pad": "LSTICK  MOVE     AUTO  ATTACK     Y  SPECIAL     B  DASH",
 	"hud.tree": "WORLD TREE  %03d / %03d",
+	"hud.tower_down": "TIER 1 TOWER LOST",
+	"hud.tower_down_sub": "CREEP WAVES NOW HIT THE TREE",
 		"hud.bought": "PURCHASED %s",
 	"hud.level_up": "LEVEL %d",
 	"hud.level_up_sub": "skill point spent",

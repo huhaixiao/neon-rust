@@ -15,8 +15,12 @@ const MELEE := "melee"
 const RANGED := "ranged"
 const SIEGE := "siege"
 
-## DotA1: one upgrade cycle every 7 min 30 s, one wave every 30 s.
-const WAVES_PER_CYCLE := 15
+## DotA1 upgrades lane creeps every 7 min 30 s (+10 HP, +1/+2 damage), which at
+## one 30s wave per beat is one cycle per 15 waves. A tower-defence run is much
+## shorter than a DotA match, so the cycle is compressed to every 7 waves (the
+## same beat as the siege wave): the ramp has to be visible inside a run, not
+## after an hour.
+const WAVES_PER_CYCLE := 7
 
 static var _cache: Dictionary = {}
 
