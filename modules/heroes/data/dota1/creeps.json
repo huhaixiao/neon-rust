@@ -1,0 +1,88 @@
+{
+  "_meta": {
+    "purpose": "DotA 1 兵线小兵数值参考（守卫世界之树的敌方兵线原型）",
+    "version": "DotA 1 6.83d（6.78 后兵线数值稳定段）",
+    "sources": [
+      "https://dotawiki.de/index.php?title=Lanecreeps",
+      "https://dota.17173.com/news/11092025/111623155_3.shtml",
+      "https://www.dota2.com.cn/info/20131024/152101.shtml"
+    ],
+    "note": "近战兵/远程兵/投石车三档 + 超级兵（兵营被破后）+ 超级投石车；本项只取血量/伤害/护甲/赏金/经验，AOE 与攻击类型倍率见 mechanics.json。"
+  },
+  "creeps": [
+    {
+      "id": "melee",
+      "name_cn": "近战兵", "name_en": "Melee Creep",
+      "health": 550, "hp_regen": 0.5, "armor": 2,
+      "damage_min": 19, "damage_max": 23,
+      "attack_range": 100, "attack_interval": 1.0, "move_speed": 325,
+      "bounty_gold": [38, 48], "bounty_xp": 62,
+      "vs_hero_damage_pct": 75,
+      "vision_day": 850, "vision_night": 800
+    },
+    {
+      "id": "ranged",
+      "name_cn": "远程兵", "name_en": "Ranged Creep",
+      "health": 300, "hp_regen": 0.5, "armor": 0,
+      "damage_min": 21, "damage_max": 26,
+      "attack_range": 500, "attack_interval": 1.0, "move_speed": 325,
+      "bounty_gold": [43, 53], "bounty_xp": 41,
+      "vs_non_hero_damage_pct": 150, "vs_hero_damage_pct": 50,
+      "mana": 500, "vision_day": 850, "vision_night": 800
+    },
+    {
+      "id": "siege",
+      "name_cn": "投石车（攻城单位）", "name_en": "Siege Creep",
+      "health": 550, "hp_regen": 0, "armor": 0,
+      "damage_min": 35, "damage_max": 46,
+      "attack_range": 690, "attack_interval": 2.7, "move_speed": 325,
+      "bounty_gold": [66, 80], "bounty_xp": 88,
+      "vs_structure_damage_pct": 150,
+      "magic_resist_pct": 80,
+      "vision_day": 850, "vision_night": 800
+    },
+    {
+      "id": "super_melee",
+      "name_cn": "高级近战兵", "name_en": "Super Melee Creep",
+      "health": 700, "hp_regen": 0.5, "armor": 3,
+      "damage_min": 36, "damage_max": 44,
+      "attack_range": 100, "attack_interval": 1.0, "move_speed": 325,
+      "bounty_gold": [18, 26], "bounty_xp": 25
+    },
+    {
+      "id": "super_ranged",
+      "name_cn": "高级远程兵", "name_en": "Super Ranged Creep",
+      "health": 475, "hp_regen": 0.5, "armor": 1,
+      "damage_min": 41, "damage_max": 46,
+      "attack_range": 500, "attack_interval": 1.0, "move_speed": 325,
+      "bounty_gold": [18, 26], "bounty_xp": 25
+    },
+    {
+      "id": "mega_melee",
+      "name_cn": "超级近战兵", "name_en": "Mega Melee Creep",
+      "health": 1270, "hp_regen": 0.5, "armor": 3,
+      "damage_min": 96, "damage_max": 104,
+      "attack_range": 100, "attack_interval": 1.0, "move_speed": 325,
+      "bounty_gold": [18, 26], "bounty_xp": 25
+    },
+    {
+      "id": "mega_ranged",
+      "name_cn": "超级远程兵", "name_en": "Mega Ranged Creep",
+      "health": 1015, "hp_regen": 0.5, "armor": 1,
+      "damage_min": 131, "damage_max": 136,
+      "attack_range": 500, "attack_interval": 1.0, "move_speed": 325,
+      "bounty_gold": [18, 26], "bounty_xp": 25
+    },
+    {
+      "id": "flagbearer",
+      "name_cn": "旗手（第 2 分钟起替换 1 个近战兵）", "name_en": "Flagbearer Creep",
+      "health": 550, "hp_regen": 0.5, "armor": 2,
+      "damage_min": 19, "damage_max": 23,
+      "attack_range": 100, "attack_interval": 1.0, "move_speed": 325,
+      "bounty_gold": [34, 39], "bounty_xp": 57,
+      "magic_resist_pct": 40,
+      "aura": { "radius": 700, "hp_regen_per_sec": 3 },
+      "note": "击杀方额外获得等于近战兵赏金的团队金钱"
+    }
+  ]
+}

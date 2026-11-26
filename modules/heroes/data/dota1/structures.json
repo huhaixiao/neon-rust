@@ -1,0 +1,72 @@
+{
+  "_meta": {
+    "purpose": "DotA 1 建筑数值参考（防御塔 / 兵营 / 世界之树），用于塔防侧的防守压力基准",
+    "version": "DotA 1 6.7x~6.83d 区间（塔数值自 6.28 后基本稳定）",
+    "sources": [
+      "https://dota.52pk.com/gonglue/5690598.shtml",
+      "https://d1stats.ru/dota-700-changelog/?lang=en",
+      "https://dota2.fandom.com/zh/wiki/%E9%81%97%E8%BF%B9/%E6%94%B9%E5%8A%A8%E6%97%A5%E5%BF%97"
+    ]
+  },
+  "buildings": [
+    {
+      "id": "tower_t1",
+      "name_cn": "一塔", "name_en": "Tier 1 Tower",
+      "health": 1300, "armor": 18,
+      "damage_min": 100, "damage_max": 120,
+      "attack_range": 700, "attack_interval": 1.0,
+      "attack_type": "normal",
+      "vs_hero_damage_pct": 75,
+      "vision_day": 1900, "vision_night": 800, "true_sight": 800,
+      "hp_regen": 0.1
+    },
+    {
+      "id": "tower_t2",
+      "name_cn": "二塔", "name_en": "Tier 2 Tower",
+      "health": 1600, "armor": 18,
+      "damage_min": 120, "damage_max": 140,
+      "attack_range": 700, "attack_interval": 1.0,
+      "attack_type": "siege",
+      "vs_hero_damage_pct": 63,
+      "hp_regen": 0.5
+    },
+    {
+      "id": "tower_t3",
+      "name_cn": "三塔", "name_en": "Tier 3 Tower",
+      "health": 1600, "armor": 25,
+      "damage_min": 122, "damage_max": 182,
+      "attack_range": 700, "attack_interval": 1.0,
+      "attack_type": "siege",
+      "vs_hero_damage_pct": 63,
+      "hp_regen": 0.5
+    },
+    {
+      "id": "tower_t4",
+      "name_cn": "四塔（高地塔）", "name_en": "Tier 4 Tower",
+      "health": 1600, "armor": 30,
+      "damage_min": 122, "damage_max": 182,
+      "attack_range": 700, "attack_interval": 1.0,
+      "attack_type": "siege",
+      "vs_hero_damage_pct": 63,
+      "hp_regen": 0.5
+    },
+    {
+      "id": "rax_melee",
+      "name_cn": "近战兵营", "name_en": "Melee Barracks",
+      "health": 1500, "armor": 15
+    },
+    {
+      "id": "rax_ranged",
+      "name_cn": "远程兵营", "name_en": "Ranged Barracks",
+      "health": 1200, "armor": 10
+    },
+    {
+      "id": "ancient",
+      "name_cn": "世界之树 / 冰封王座", "name_en": "Tree of Life / Frozen Throne",
+      "health": 4250, "armor": 15,
+      "hp_regen": 3,
+      "attack": "Dota1 中不可攻击（5.72 起攻击力降为 1，6.04 移除）"
+    }
+  ],
+  "tower_aggro_note": "塔每 7 秒重算一次仇恨，优先级：血量 <20% > 血量 <50% > 攻击友方英雄的单位 > 当前目标 > 攻击塔的单位 > 最近单位。塔对它视野内的隐身单位也能看见（真视 800）。"
+}

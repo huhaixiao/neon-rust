@@ -1,0 +1,44 @@
+{
+  "_meta": {
+    "purpose": "DotA 1 兵线节奏与经济/成长规则（波次曲线的原始依据）",
+    "version": "DotA 1 6.83d",
+    "sources": [
+      "https://dotawiki.de/index.php?title=Lanecreeps",
+      "https://iccup.com/ru/infobase_creeps"
+    ]
+  },
+  "wave": {
+    "interval_sec": 30,
+    "first_wave_at_sec": 0,
+    "composition": { "melee": 3, "ranged": 1, "siege": 0 },
+    "siege_every_n_waves": 7,
+    "siege_first_wave": 7,
+    "extra_melee_at_sec": [999, 1999, 2999],
+    "extra_ranged_at_sec": 2699,
+    "upgrade_every_sec": 450,
+    "upgrade_per_cycle": {
+      "melee": { "health": 10, "damage": 1 },
+      "ranged": { "health": 10, "damage": 2 },
+      "super_melee": { "health": 19, "damage": 2 },
+      "super_ranged": { "health": 18, "damage": 3 }
+    },
+    "upgrade_max_cycles": 28
+  },
+  "economy": {
+    "starting_gold": 603,
+    "gold_per_sec": 1,
+    "passive_gold_tick_sec": 1,
+    "kill_gold_hero_base": 200,
+    "deny_gold_pct": 0,
+    "deny_xp_pct": 50
+  },
+  "combat_rules": {
+    "armor_formula": "伤害减免 = 0.06*armor / (1 + 0.06*armor)（Dota1 6.x 口径）",
+    "attack_types": {
+      "siege_vs_structure_pct": 150,
+      "ranged_vs_non_hero_pct": 150,
+      "tower_vs_hero_pct": 75
+    }
+  },
+  "conversion_hint": "本游戏不需要 1:1 复刻：建议保留『小兵血量高/伤害低、远程兵伤害高血量低、投石车专打建筑』的比例关系，用本项目 1 单位 = 1 像素的比例重新缩放。"
+}
