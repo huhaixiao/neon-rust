@@ -28,17 +28,20 @@ static func _build(id: String) -> HeroDef:
 		DROW:
 			def.id = DROW
 			def.name_key = "hero.drow.name"
-			# Long range and a frost arrow: she clears a lane from behind it
-			# rather than standing in it.
-			def.attack_range = 470.0
-			def.damage = 26.0
-			def.attack_interval = 0.58
-			def.bullet_speed = 1200.0
-			def.move_speed = 330.0
-			def.health = 140
+			# DotA1 6.7x sheet, verbatim: 473 HP, 44-55 damage, 1.7 BAT,
+			# 625 range, 300 move speed, 1 armour, Frost Arrows 45%/1.5s.
+			def.attack_range = 625.0
+			def.damage = 49.5
+			def.damage_min = 44.0
+			def.damage_max = 55.0
+			def.attack_interval = 1.7
+			def.bullet_speed = 1250.0
+			def.move_speed = 300.0
+			def.health = 473
+			def.armor = 1.0
 			def.bullet_color = Color(0.62, 0.9, 1.0)
-			def.slow_factor = 0.4
-			def.slow_time = 1.4
+			def.slow_factor = 0.45
+			def.slow_time = 1.5
 			def.auto_attack = true
 		_:
 			def.id = "unknown"

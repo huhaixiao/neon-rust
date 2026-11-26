@@ -1,18 +1,31 @@
 class_name WaveDirector
 extends Node2D
-## Wave director: builds a budget per wave, trickles enemies in from the arena
-## edges, waits for a full clear, then hands out a bonus and the next wave.
+## DotA1 兵线节奏:
+##
+##   - 每波: 3 个近战兵 + 1 个远程兵；每第 7 波多一辆投石车
+##   - 没有间隔: 一波清空, 下一波立刻从上方走进中路
+##   - 小兵按 DotA1 的 7:30 周期升级（每 15 波一次, 见 CreepCatalog）
+##
+## One middle lane for now: creeps enter at the top of the map and walk down
+## to the World Tree. Side lanes stay as data for later (see `docs/`).
 
 const ENEMY_SCENE := preload("res://modules/enemies/enemy.tscn")
 const PICKUP_SCENE := preload("res://modules/pickups/pickup.tscn")
 
-## One middle lane for now: creeps enter at the top of the map and walk down
-## to the World Tree. Side lanes stay as data for later (see `docs/`).
 const LANE_X := 800.0
 const LANE_START_Y := 110.0
 const LANE_END := Vector2(800.0, 858.0)
 ## How close the hero has to get before a lane creep stops marching and fights.
 const ENGAGE_RANGE := 250.0
+
+## DotA1 wave layout (6.83d).
+const MELEE_PER_WAVE := 3
+const RANGED_PER_WAVE := 1
+const SIEGE_EVERY_N_WAVES := 7
+## Creeps of one wave walk in together rather than one by one.
+const SPAWN_INTERVAL := 0.35
+## Only the very first wave gets a beat of quiet so the player can read the lane.
+const FIRST_START_DELAY := 1.2
 
 var wave := 0
 var lane_end := LANE_END
@@ -20,8 +33,8 @@ var lane_end := LANE_END
 var _alive: Array[Enemy] = []
 var _queue: Array[int] = []
 var _spawn_cd := 0.0
-var _spawn_interval := 0.9
-var _intermission := 0.0
+var _spawn_interval := SPAWN_INTERVAL
+var _start_delay := 0.0
 var _active := false
 
 
@@ -30,16 +43,16 @@ func start() -> void:
 	wave = 0
 	_alive.clear()
 	_queue.clear()
-	_intermission = 2.6
+	_start_delay = FIRST_START_DELAY
 
 
 func _process(delta: float) -> void:
 	if not _active or not Game.running:
 		return
 	_prune()
-	if _intermission > 0.0:
-		_intermission -= delta
-		if _intermission <= 0.0:
+	if _start_delay > 0.0:
+		_start_delay -= delta
+		if _start_delay <= 0.0:
 			_begin_wave(wave + 1)
 		return
 	if not _queue.is_empty():
@@ -47,40 +60,35 @@ func _process(delta: float) -> void:
 		if _spawn_cd <= 0.0:
 			_spawn_one()
 		return
-	if _alive.is_empty():
+	# No intermission: the moment the lane is empty the next wave steps in.
+	if _alive.is_empty() and wave > 0:
 		_finish_wave()
+
+
+## One DotA1 wave, as a list of creep kinds in walking order.
+func composition(index: int) -> Array[int]:
+	var out: Array[int] = []
+	for i in MELEE_PER_WAVE:
+		out.append(Enemy.Kind.CHASER)
+	for i in RANGED_PER_WAVE:
+		out.append(Enemy.Kind.SPITTER)
+	if index % SIEGE_EVERY_N_WAVES == 0:
+		out.append(Enemy.Kind.BRUTE)
+	return out
 
 
 func _begin_wave(index: int) -> void:
 	wave = index
 	Game.set_wave(index)
-	# One lane means one wave budget, not four edges' worth. Count keeps the
-	# ramp readable instead of drowning a single lane in creeps.
-	var total := mini(5 + index * 2, 32)
-	var spitters := 0
-	var brutes := 0
-	if index >= 3:
-		spitters = maxi(1, int(index * 0.5))
-	if index >= 4:
-		brutes = maxi(1, int(index * 0.25))
-	var melee := maxi(1, total - spitters - brutes)
-	_queue.clear()
-	for i in melee:
-		_queue.append(Enemy.Kind.CHASER)
-	for i in spitters:
-		_queue.append(Enemy.Kind.SPITTER)
-	for i in brutes:
-		_queue.append(Enemy.Kind.BRUTE)
-	_queue.shuffle()
-	_spawn_interval = clampf(0.95 - 0.04 * index, 0.25, 0.95)
-	_spawn_cd = 0.3
+	_queue = composition(index)
+	_spawn_cd = 0.0
 	Fx.sfx(Fx.SFX_WAVE, -2.0, 1.0)
 
 
 func _spawn_one() -> void:
 	if Game.enemies_root == null or _queue.is_empty():
 		return
-	var kind: int = _queue.pop_back()
+	var kind: int = _queue.pop_front()
 	var enemy := ENEMY_SCENE.instantiate() as Enemy
 	enemy.configure(kind, wave)
 	enemy.lane_active = true
@@ -112,18 +120,20 @@ func _finish_wave() -> void:
 	var bonus := int(round(float(25 + wave * 20) * Game.buff_bounty_mult))
 	Game.add_score(bonus)
 	Game.wave_cleared.emit(wave, bonus)
-	_intermission = 2.8
+	# The draft that follows pauses the tree; the queue is already loaded so
+	# the next wave walks in as soon as play resumes.
+	_begin_wave(wave + 1)
 
 
 func _on_enemy_died(kind: int, at: Vector2) -> void:
 	# Deaths arrive from inside a physics callback (bullet hits), so anything
 	# that adds colliders has to wait for the physics step to finish.
 	var values := {
-		Enemy.Kind.CHASER: 10,
-		Enemy.Kind.BRUTE: 45,
-		Enemy.Kind.SPITTER: 30,
+		Enemy.Kind.CHASER: 43,
+		Enemy.Kind.BRUTE: 73,
+		Enemy.Kind.SPITTER: 48,
 	}
-	Game.add_score(int(values.get(kind, 10)))
+	Game.add_score(int(values.get(kind, 43)))
 	Game.enemy_killed.emit(kind, at)
 	if not is_inside_tree():
 		return

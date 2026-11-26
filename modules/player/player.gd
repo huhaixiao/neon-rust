@@ -22,6 +22,7 @@ const BULLET_SCENE := preload("res://modules/projectiles/bullet.tscn")
 @export var auto_aim := true
 
 var attack_range := 470.0
+var armor := 0.0
 var health := 100
 var aim := Vector2.RIGHT
 var overdrive_left := 0.0
@@ -30,6 +31,8 @@ var target: Enemy = null
 var bullet_color := Color(0.45, 1.0, 1.0)
 var _slow_factor := 0.0
 var _slow_time := 0.0
+var _damage_min := 0.0
+var _damage_max := 0.0
 
 var _dashing := false
 var _dash_left := 0.0
@@ -42,6 +45,8 @@ var _ghost_cd := 0.0
 var _flash_tween: Tween = null
 var _aim_from_stick := false
 var _steal_acc := 0.0
+## Debug counter: how many volleys the hero actually let go this run.
+var shots_fired := 0
 var _sentry: Node2D = null
 var _sentry_cd := 0.0
 var _sentry_angle := 0.0
@@ -71,6 +76,9 @@ func apply_hero(def: HeroDef) -> void:
 	hero_id = def.id
 	attack_range = def.attack_range
 	bullet_damage = def.damage
+	_damage_min = def.damage_min
+	_damage_max = def.damage_max
+	armor = def.armor
 	fire_interval = def.attack_interval
 	bullet_speed = def.bullet_speed
 	move_speed = def.move_speed
@@ -334,10 +342,11 @@ func _sentry_interval() -> float:
 
 
 func _shoot() -> void:
+	shots_fired += 1
 	# One fan for every source of extra rounds, so overdrive and SPLIT SHOT
 	# compose instead of fighting over who writes the bullet loop.
 	var count := mini(1 + Game.buff_extra_shots + (2 if overdrive_left > 0.0 else 0), 6)
-	var damage := bullet_damage * Game.buff_damage_mult
+	var damage := _roll_damage() * Game.buff_damage_mult
 	var per := damage if count == 1 else damage * 0.72
 	if count == 1:
 		_spawn_bullet(aim, per)
@@ -352,10 +361,19 @@ func _shoot() -> void:
 	_pop_muzzle()
 
 
+## DotA1 damage is a window, not a fixed number: 44-55 for 小黑.
+func _roll_damage() -> float:
+	if _damage_max > _damage_min:
+		return randf_range(_damage_min, _damage_max)
+	return bullet_damage
+
+
 func _spawn_bullet(direction: Vector2, damage: float) -> void:
 	var bullet := BULLET_SCENE.instantiate()
 	bullet.setup(direction, damage, bullet_speed, true, bullet_color, Game.buff_pierce, _slow_factor, _slow_time)
-	bullet.position = muzzle.global_position
+	# Fire from the hull, not from the muzzle tip: a creep standing on top of the
+	# hero would otherwise be spawned past, and a point-blank shot would miss.
+	bullet.position = global_position + direction * 14.0
 	Game.bullets_root.add_child(bullet)
 
 
@@ -393,7 +411,7 @@ func _update_visuals() -> void:
 func take_damage(amount: float, from: Vector2 = Vector2.ZERO) -> void:
 	if dead or _invuln > 0.0 or not Game.running:
 		return
-	health = maxi(0, health - int(round(amount)))
+	health = maxi(0, health - int(round(Armor.apply(amount, armor))))
 	_invuln = 0.42
 	start_hit_flash(0.14)
 	Game.set_health(health, max_health)

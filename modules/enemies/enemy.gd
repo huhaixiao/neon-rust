@@ -1,6 +1,9 @@
 class_name Enemy
 extends ShipBody
-## CHASER = fast/fragile, BRUTE = slow tank, SPITTER = keeps range and shoots.
+## DotA1 兵线小兵. The whole stat sheet comes from `CreepCatalog`, so the three
+## kinds here are only "which lane role", not a hand-tuned enemy design:
+##
+##   CHASER  = 近战兵   BRUTE = 投石车   SPITTER = 远程兵
 
 signal died(kind: int, at: Vector2)
 
@@ -13,17 +16,28 @@ const BULLET_SCENE := preload("res://modules/projectiles/bullet.tscn")
 
 @export var kind: Kind = Kind.CHASER
 
-var health := 30.0
-var health_max := 30.0
-var speed := 235.0
-var contact_damage := 12.0
-var score_value := 10
+var def: CreepDef
+var health := 550.0
+var health_max := 550.0
+var speed := 325.0
+var contact_damage := 21.0
+var armor := 2.0
+var attack_range := 100.0
+var attack_interval := 1.0
+var projectile_speed := 0.0
+var projectile_color := Color(0.55, 1.0, 0.35)
+var vs_hero_pct := 0.75
+var bounty := 43
+var score_value := 43
 var radius := 17.0
 var body_scale := 0.82
 var base_color := Color(1.0, 0.25, 0.5)
 
 ## Lane duty. A creep with `lane_active` walks toward `lane_end` (the World
 ## Tree) and only breaks off to fight when the hero comes within `engage_range`.
+## Reaching the tree does not delete the creep any more: it stands there and
+## hits the tree until something kills it, exactly like a DotA1 creep pushing
+## a building.
 var lane_active := false
 var lane_end := Vector2.ZERO
 var engage_range := 250.0
@@ -31,8 +45,8 @@ var engage_range := 250.0
 var slow_mult := 1.0
 var slow_left := 0.0
 
-var _hit_cd := 0.0
-var _shoot_cd := 0.0
+var _attack_cd := 0.0
+var _at_tree := false
 var _orbit := 1.0
 
 @onready var sprite: Sprite2D = $Sprite
@@ -43,34 +57,29 @@ var _orbit := 1.0
 
 func configure(kind_value, wave_index: int) -> void:
 	kind = kind_value
-	var hp_ramp := 1.0 + 0.16 * float(maxi(0, wave_index - 1))
-	var speed_ramp := 1.0 + 0.03 * float(maxi(0, wave_index - 1))
+	var creep_id := CreepCatalog.MELEE
 	match kind:
-		Kind.CHASER:
-			health_max = 30.0 * hp_ramp
-			speed = 235.0 * speed_ramp
-			contact_damage = 12.0
-			score_value = 10
-			radius = 17.0
-			body_scale = 0.82
-			base_color = Color(1.0, 0.25, 0.5)
 		Kind.BRUTE:
-			health_max = 130.0 * hp_ramp
-			speed = 118.0 * speed_ramp
-			contact_damage = 26.0
-			score_value = 45
-			radius = 32.0
-			body_scale = 0.92
-			base_color = Color(1.0, 0.55, 0.15)
+			creep_id = CreepCatalog.SIEGE
 		Kind.SPITTER:
-			health_max = 48.0 * hp_ramp
-			speed = 150.0 * speed_ramp
-			contact_damage = 10.0
-			score_value = 30
-			radius = 19.0
-			body_scale = 0.85
-			base_color = Color(0.75, 1.0, 0.25)
+			creep_id = CreepCatalog.RANGED
+	def = CreepCatalog.get_def(creep_id)
+	var cycles := CreepCatalog.cycles_for_wave(wave_index)
+	health_max = def.health_at(cycles)
 	health = health_max
+	armor = def.armor
+	contact_damage = def.damage_at(cycles)
+	attack_range = def.attack_range
+	attack_interval = def.attack_interval
+	projectile_speed = def.projectile_speed
+	projectile_color = def.projectile_color
+	vs_hero_pct = def.vs_hero_pct
+	speed = def.move_speed
+	bounty = def.bounty_gold
+	score_value = def.bounty_gold
+	radius = def.radius
+	body_scale = def.body_scale
+	base_color = def.color
 	_orbit = 1.0 if randf() < 0.5 else -1.0
 
 
@@ -84,9 +93,10 @@ func _ready() -> void:
 
 func _apply_look() -> void:
 	var texture: Texture2D = TEX_CHASER
-	if kind == Kind.BRUTE:
+	var look := def.look if def != null else 0
+	if look == 2:
 		texture = TEX_BRUTE
-	elif kind == Kind.SPITTER:
+	elif look == 1:
 		texture = TEX_SPITTER
 	sprite.texture = texture
 	sprite.scale = Vector2(body_scale, body_scale)
@@ -104,54 +114,102 @@ func _process(delta: float) -> void:
 func _physics_process(delta: float) -> void:
 	if dead:
 		return
-	_hit_cd = maxf(0.0, _hit_cd - delta)
-	_shoot_cd = maxf(0.0, _shoot_cd - delta)
+	_attack_cd = maxf(0.0, _attack_cd - delta)
 	_tick_slow(delta)
 	if not Game.running:
 		return
 	var player := Game.player as PlayerUnit
 	if player != null and not player.dead:
-		var to_player: Vector2 = player.global_position - global_position
-		var distance := to_player.length()
-		var direction := to_player.normalized() if distance > 0.001 else Vector2.RIGHT
+		var distance: float = player.global_position.distance_to(global_position)
 		# On lane duty the hero has to come to the creep; otherwise the whole
 		# wave would peel off and chase one target around the map.
 		if not lane_active or distance <= engage_range:
-			_steer(direction, distance, delta)
-			velocity += _separation()
-			position += velocity * delta
-			clamp_to_arena(radius + 4.0)
-			_face(delta, direction)
-			_touch_player(distance, player)
-			_try_shoot(distance, player)
+			_fight(player, distance, delta)
 			return
 	if lane_active:
 		_march_lane(delta)
 
 
-## Walks the middle lane toward the tree. Going through `lane_end` counts as a
-## leak: the creep chips the tree and is removed, so a wave that gets past the
-## hero still costs something.
+## Chases, stops at its own attack range, and hits on its own interval.
+func _fight(player: PlayerUnit, distance: float, delta: float) -> void:
+	var to_player: Vector2 = player.global_position - global_position
+	var direction := to_player.normalized() if distance > 0.001 else Vector2.RIGHT
+	var standoff := attack_range if attack_range > 150.0 else radius + 20.0
+	if distance > standoff:
+		velocity = velocity.lerp(direction * speed * slow_mult, minf(1.0, delta * 4.0))
+	elif distance < standoff - 8.0:
+		# Back off instead of standing inside the hero: melee creeps that pile
+		# onto the hull end up spawned past by point-blank shots.
+		velocity = velocity.lerp(-direction * speed * 0.6 * slow_mult, minf(1.0, delta * 4.0))
+	else:
+		velocity = velocity.lerp(Vector2.ZERO, minf(1.0, delta * 6.0))
+	velocity += _separation()
+	position += velocity * delta
+	clamp_to_arena(radius + 4.0)
+	if projectile_speed <= 0.0 and velocity.length() > 4.0:
+		rotation = lerp_angle(rotation, velocity.angle(), minf(1.0, delta * 9.0))
+	else:
+		_face(direction, delta)
+	if distance <= standoff + 8.0:
+		_strike(player)
+
+
+func _face(direction: Vector2, delta: float) -> void:
+	rotation = lerp_angle(rotation, direction.angle(), minf(1.0, delta * 7.0))
+
+
+## Walks the middle lane toward the tree, then sieges it.
 func _march_lane(delta: float) -> void:
+	if _at_tree:
+		_siege_tree(delta)
+		return
 	var to_end: Vector2 = lane_end - global_position
 	var distance := to_end.length()
 	if distance <= radius + 26.0:
-		_leak()
+		_at_tree = true
+		velocity = Vector2.ZERO
+		_siege_tree(delta)
 		return
 	var direction := to_end.normalized() if distance > 0.001 else Vector2.DOWN
 	velocity = velocity.lerp(direction * speed * slow_mult, minf(1.0, delta * 4.0))
 	velocity += _separation()
 	position += velocity * delta
 	clamp_to_arena(radius + 4.0)
-	_face(delta, direction)
+	_face(direction, delta)
 
 
-func _leak() -> void:
-	Game.damage_tree(int(round(contact_damage * 1.6)))
-	Fx.burst(global_position, Color(1.0, 0.6, 0.3), 16, 260.0, 0.8)
+## Creeps that get past the hero keep chewing on the tree. DotA1 numbers:
+## a melee creep pays 21 damage per hit into a 4250 HP ancient.
+func _siege_tree(_delta: float) -> void:
+	if _attack_cd > 0.0:
+		return
+	_attack_cd = attack_interval
+	Game.damage_tree(int(round(contact_damage)))
+	Fx.burst(global_position + Vector2(0.0, 12.0), Color(1.0, 0.6, 0.3), 10, 170.0, 0.6)
 	Fx.flash(global_position, Color(1.0, 0.55, 0.35))
-	Fx.sfx(Fx.SFX_HIT, -4.0, 0.8)
-	queue_free()
+	Fx.sfx(Fx.SFX_HIT, -6.0, 0.8)
+
+
+func _strike(player: PlayerUnit) -> void:
+	if _attack_cd > 0.0:
+		return
+	_attack_cd = attack_interval
+	var amount := contact_damage * vs_hero_pct
+	if projectile_speed > 0.0:
+		if Game.bullets_root == null:
+			return
+		var aim: Vector2 = (player.global_position - global_position).normalized()
+		if aim == Vector2.ZERO:
+			aim = Vector2.DOWN
+		var bullet := BULLET_SCENE.instantiate()
+		bullet.setup(aim, amount, projectile_speed, false, projectile_color)
+		bullet.position = global_position + aim * (radius + 6.0)
+		Game.bullets_root.add_child(bullet)
+		sfx_shoot.pitch_scale = randf_range(0.82, 0.98)
+		sfx_shoot.play()
+		return
+	player.take_damage(int(round(amount)), global_position)
+	Fx.burst(global_position, base_color, 6, 150.0, 0.6)
 
 
 func apply_slow(factor: float, duration: float) -> void:
@@ -169,22 +227,6 @@ func _tick_slow(delta: float) -> void:
 		slow_mult = 1.0
 
 
-func _steer(direction: Vector2, distance: float, delta: float) -> void:
-	match kind:
-		Kind.CHASER:
-			velocity = velocity.lerp(direction * speed, minf(1.0, delta * 6.0))
-		Kind.BRUTE:
-			velocity = velocity.lerp(direction * speed, minf(1.0, delta * 3.0))
-		Kind.SPITTER:
-			var tangent := Vector2(-direction.y, direction.x) * _orbit
-			if distance < 320.0:
-				velocity = velocity.lerp(-direction * speed, minf(1.0, delta * 5.0))
-			elif distance > 640.0:
-				velocity = velocity.lerp(direction * speed, minf(1.0, delta * 5.0))
-			else:
-				velocity = velocity.lerp(tangent * speed * 0.7, minf(1.0, delta * 3.0))
-
-
 func _separation() -> Vector2:
 	var push := Vector2.ZERO
 	for other in get_tree().get_nodes_in_group("enemies"):
@@ -199,42 +241,10 @@ func _separation() -> Vector2:
 	return push
 
 
-func _face(delta: float, direction: Vector2) -> void:
-	if kind == Kind.SPITTER:
-		rotation = lerp_angle(rotation, direction.angle(), minf(1.0, delta * 5.0))
-	elif velocity.length() > 4.0:
-		rotation = lerp_angle(rotation, velocity.angle(), minf(1.0, delta * 9.0))
-
-
-func _touch_player(distance: float, player: PlayerUnit) -> void:
-	if distance >= radius + 20.0 or _hit_cd > 0.0:
-		return
-	_hit_cd = 0.8
-	player.take_damage(contact_damage, global_position)
-	Fx.burst(global_position, base_color, 6, 150.0, 0.6)
-
-
-func _try_shoot(distance: float, player: PlayerUnit) -> void:
-	if kind != Kind.SPITTER or _shoot_cd > 0.0 or distance > 760.0:
-		return
-	if Game.bullets_root == null:
-		return
-	_shoot_cd = 2.3
-	var lead: float = distance / 900.0
-	var target: Vector2 = player.global_position + player.velocity * lead * 0.6
-	var direction := (target - global_position).normalized()
-	var bullet := BULLET_SCENE.instantiate()
-	bullet.setup(direction, 14.0, 620.0, false, Color(1.0, 0.4, 0.45))
-	bullet.position = global_position + direction * (radius + 8.0)
-	Game.bullets_root.add_child(bullet)
-	sfx_shoot.pitch_scale = randf_range(0.82, 0.98)
-	sfx_shoot.play()
-
-
 func take_damage(amount: float, hit_at: Vector2) -> void:
 	if dead:
 		return
-	health -= amount
+	health -= Armor.apply(amount, armor)
 	start_hit_flash(0.1)
 	knock_back(hit_at, 3.0)
 	Fx.burst(hit_at, base_color, 4, 130.0, 0.5)

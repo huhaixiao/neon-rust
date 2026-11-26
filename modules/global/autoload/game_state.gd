@@ -28,8 +28,9 @@ var health := 100
 var max_health := 100
 ## The World Tree is the actual lose condition in lane mode. The hero going
 ## down still ends the run, but leaking waves is what grinds you out.
-var tree_health := 220
-var max_tree_health := 220
+## 4250 HP / 15 armour: the DotA1 ancient, straight out of the reference sheet.
+var tree_health := 4250
+var max_tree_health := 4250
 var running := false
 
 ## Screen shake request, consumed and decayed by the camera rig.

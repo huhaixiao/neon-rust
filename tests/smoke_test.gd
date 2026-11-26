@@ -65,8 +65,8 @@ func _run() -> void:
 	Game.bullets_root.add_child(bullet)
 	for i in 25:
 		await get_tree().physics_frame
-	if is_instance_valid(enemy) and not enemy.is_queued_for_deletion() and enemy.health > 0.0:
-		_fail("player bullet did not damage the enemy")
+	if is_instance_valid(enemy) and not enemy.is_queued_for_deletion() and enemy.health >= enemy.health_max:
+		_fail("player bullet did not damage the enemy (hp %.0f / %.0f)" % [enemy.health, enemy.health_max])
 
 	# --- right stick release keeps the last heading ----------------------
 	if player != null:
@@ -91,9 +91,10 @@ func _run() -> void:
 		nova_target.position = player.global_position + Vector2(90.0, 0.0)
 		Game.enemies_root.add_child(nova_target)
 		await get_tree().physics_frame
+		var nova_before := nova_target.health
 		player.fire_special()
 		await get_tree().physics_frame
-		if is_instance_valid(nova_target) and not nova_target.is_queued_for_deletion() and not nova_target.dead:
+		if is_instance_valid(nova_target) and not nova_target.is_queued_for_deletion() and nova_target.health >= nova_before:
 			_fail("special pulse did not damage the enemy inside its radius")
 		if player.is_special_ready():
 			_fail("special pulse did not start its cooldown")

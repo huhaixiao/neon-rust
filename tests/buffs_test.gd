@@ -73,10 +73,12 @@ func _run() -> void:
 	var spawned := Game.bullets_root.get_child_count() - bullets_before
 	if spawned != 1 + Game.buff_extra_shots:
 		_fail("shot fired %d rounds, expected %d" % [spawned, 1 + Game.buff_extra_shots])
-	var round_damage: float = player.bullet_damage * Game.buff_damage_mult * 0.72
+	# 小黑 rolls 44-55, and SPLIT SHOT rounds go out at 72% of that.
+	var low: float = player._damage_min * Game.buff_damage_mult * 0.72
+	var high: float = player._damage_max * Game.buff_damage_mult * 0.72
 	var last_bullet := Game.bullets_root.get_child(Game.bullets_root.get_child_count() - 1) as Projectile
-	if last_bullet != null and not is_equal_approx(last_bullet.damage, round_damage):
-		_fail("bullet damage %.1f did not include the OVERCLOCK multiplier" % last_bullet.damage)
+	if last_bullet != null and (last_bullet.damage < low - 0.01 or last_bullet.damage > high + 0.01):
+		_fail("bullet damage %.1f is outside the 44-55 x OVERCLOCK x 0.72 window %.1f-%.1f" % [last_bullet.damage, low, high])
 	for child in Game.bullets_root.get_children():
 		child.queue_free()
 
@@ -146,6 +148,8 @@ func _run() -> void:
 			_fail("SHOCKWAVE LENS gave special radius x%.2f" % Game.buff_special_radius_mult)
 		var blast_target := (load("res://modules/enemies/enemy.tscn") as PackedScene).instantiate() as Enemy
 		blast_target.configure(Enemy.Kind.CHASER, 1)
+		# Creeps carry DotA1 HP (550 for melee), so the pulse cannot one-shot one.
+		blast_target.health = 40.0
 		blast_target.position = player.global_position + Vector2(140.0, 0.0)
 		Game.enemies_root.add_child(blast_target)
 		await get_tree().physics_frame
